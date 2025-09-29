@@ -1,0 +1,207 @@
+/* Стили для плагина Inventory */
+
+.inventory-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.inventory-search-box {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 25px;
+    margin-bottom: 30px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.inventory-search-input {
+    width: 100%;
+    max-width: 400px;
+    padding: 12px 16px;
+    border: 2px solid #ddd;
+    border-radius: 6px;
+    font-size: 16px;
+    transition: border-color 0.3s;
+}
+
+.inventory-search-input:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0,123,255,0.25);
+}
+
+.inventory-search-btn {
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    margin-left: 10px;
+    border-radius: 6px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.inventory-search-btn:hover {
+    background: #0056b3;
+}
+
+.inventory-search-btn:disabled {
+    background: #6c757d;
+    cursor: not-allowed;
+}
+
+.inventory-results {
+    margin-top: 20px;
+}
+
+.inventory-loading {
+    text-align: center;
+    padding: 40px;
+    color: #6c757d;
+    font-size: 18px;
+}
+
+.inventory-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #007bff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-right: 10px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.inventory-no-results {
+    text-align: center;
+    padding: 40px;
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 8px;
+    color: #856404;
+    font-size: 16px;
+}
+
+.inventory-results-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.inventory-results-table th {
+    background: #007bff;
+    color: white;
+    padding: 15px 12px;
+    text-align: left;
+    font-weight: 600;
+}
+
+.inventory-results-table td {
+    padding: 12px;
+    border-bottom: 1px solid #eee;
+    vertical-align: middle;
+}
+
+.inventory-results-table tr:last-child td {
+    border-bottom: none;
+}
+
+.inventory-results-table tr:hover {
+    background: #f8f9fa;
+}
+
+.inventory-type-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.inventory-type-computer {
+    background: #d4edda;
+    color: #155724;
+}
+
+.inventory-type-monitor {
+    background: #d1ecf1;
+    color: #0c5460;
+}
+
+.inventory-type-peripheral {
+    background: #ffeaa7;
+    color: #856404;
+}
+
+.inventory-open-link {
+    display: inline-block;
+    padding: 6px 12px;
+    background: #28a745;
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+    font-size: 14px;
+    transition: background-color 0.3s;
+}
+
+.inventory-open-link:hover {
+    background: #218838;
+    color: white;
+    text-decoration: none;
+}
+
+.inventory-stats {
+    margin-top: 15px;
+    padding: 10px 15px;
+    background: #e7f3ff;
+    border: 1px solid #b8daff;
+    border-radius: 6px;
+    color: #004085;
+    font-size: 14px;
+}
+
+.inventory-error {
+    padding: 15px;
+    background: #f8d7da;
+    border: 1px solid #f5c6cb;
+    border-radius: 6px;
+    color: #721c24;
+    margin-top: 20px;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .inventory-container {
+        padding: 10px;
+    }
+    
+    .inventory-search-input {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+    
+    .inventory-search-btn {
+        margin-left: 0;
+        width: 100%;
+    }
+    
+    .inventory-results-table {
+        font-size: 14px;
+    }
+    
+    .inventory-results-table th,
+    .inventory-results-table td {
+        padding: 8px 6px;
+    }
+}

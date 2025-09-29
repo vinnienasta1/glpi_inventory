@@ -1,0 +1,72 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-01-01 12:00+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "Inventory"
+msgstr "Инвенторизация"
+
+msgid "Search by inventory number"
+msgstr "Поиск по инвентарному номеру"
+
+msgid "Inventory number"
+msgstr "Инвентарный номер"
+
+msgid "Search"
+msgstr "Поиск"
+
+msgid "Results"
+msgstr "Результаты"
+
+msgid "Not found"
+msgstr "Не найдено"
+
+msgid "Type"
+msgstr "Тип"
+
+msgid "Name"
+msgstr "Наименование"
+
+msgid "Serial number"
+msgstr "Серийный номер"
+
+msgid "Department"
+msgstr "Департамент"
+
+msgid "Status"
+msgstr "Статус"
+
+msgid "Location"
+msgstr "Местоположение"
+
+msgid "User"
+msgstr "Пользователь"
+
+msgid "Actions"
+msgstr "Действия"
+
+msgid "Open"
+msgstr "Открыть"
+
+msgid "Computer"
+msgstr "Компьютер"
+
+msgid "Monitor"
+msgstr "Монитор"
+
+msgid "Peripheral"
+msgstr "Устройство"
