@@ -111,7 +111,7 @@ function getCellValue(item, columnKey) {
                 </button>`;
             }
             return `<a href="${item.url}" target="_blank" class="inventory-open-link">
-                <i class="fas fa-external-link-alt"></i> Открыть
+                <i class="fas fa-external-link-alt"></i>
             </a>
             <button class="inventory-delete-btn" onclick="removeBufferItem(${item.index})">
                 <i class="fas fa-trash"></i>
