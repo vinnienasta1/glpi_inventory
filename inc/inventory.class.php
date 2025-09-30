@@ -47,7 +47,7 @@ class PluginInventoryInventory extends CommonGLPI {
             $table = 'glpi_' . strtolower($type) . 's';
             
             $iterator = $DB->request([
-                'SELECT' => ['id', 'name', 'otherserial', 'serial', 'groups_id', 'states_id', 'locations_id', 'users_id', 'comment'],
+                'SELECT' => ['id', 'name', 'otherserial', 'serial', 'contact', 'groups_id', 'states_id', 'locations_id', 'users_id', 'comment'],
                 'FROM' => $table,
                 'WHERE' => [
                     'is_deleted' => 0,

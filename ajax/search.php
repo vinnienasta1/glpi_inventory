@@ -79,6 +79,7 @@ try {
             'group_name' => isset($data['group_name']) ? $data['group_name'] : '-',
             'state_name' => isset($data['state_name']) ? $data['state_name'] : '-',
             'location_name' => isset($data['location_name']) ? $data['location_name'] : '-',
+            'contact' => isset($data['contact']) ? $data['contact'] : '-',
             'user_name' => isset($data['user_name']) ? $data['user_name'] : '-',
             'comment' => $data['comment'],
             'url' => "/front/" . strtolower($type) . ".form.php?id=" . $data['id']
