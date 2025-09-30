@@ -4,11 +4,11 @@
  * 
  * Данный плагин реализует функционал поиска оборудования по инвентарным номерам
  * 
- * @version 1.0.1
+ * @version 1.0.2
  * @author Ваше имя
  */
 
-define('PLUGIN_INVENTORY_VERSION', '1.0.1');
+define('PLUGIN_INVENTORY_VERSION', '1.0.2');
 
 /**
  * Инициализация плагина
@@ -22,9 +22,7 @@ function plugin_init_inventory() {
     $PLUGIN_HOOKS['menu_toadd']['inventory'] = ['tools' => 'PluginInventoryInventory'];
     
     // Регистрируем класс
-    Plugin::registerClass('PluginInventoryInventory', [
-        'classname' => 'PluginInventoryInventory'
-    ]);
+    Plugin::registerClass('PluginInventoryInventory');
 }
 
 /**

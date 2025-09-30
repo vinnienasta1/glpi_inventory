@@ -23,6 +23,14 @@ include ($glpi_root . "inc/includes.php");
 // Проверка прав доступа
 Session::checkRight("config", READ);
 
+// Проверка CSRF токена
+try {
+    Session::checkCSRF($_POST);
+} catch (Exception $e) {
+    echo json_encode(['error' => 'Ошибка безопасности: недействительный CSRF токен. Обновите страницу.']);
+    exit;
+}
+
 header('Content-Type: application/json');
 
 if (!isset($_POST['search_serial']) || empty(trim($_POST['search_serial']))) {

@@ -45,6 +45,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const formData = new FormData();
         formData.append('search_serial', searchTerm);
         
+        // Добавляем CSRF токен
+        if (window.glpi_csrf_token) {
+            formData.append('_glpi_csrf_token', window.glpi_csrf_token);
+        } else {
+            console.warn('CSRF token not found. Page may need to be refreshed.');
+        }
+        
         // Определяем базовый URL для AJAX запросов
         let ajaxUrl;
         const currentPath = window.location.pathname;

@@ -13,6 +13,12 @@ Html::header('Инвенторизация', $_SERVER['PHP_SELF'], "tools", "Plu
 
 // Подключаем CSS и JS
 echo "<link rel='stylesheet' type='text/css' href='/plugins/inventory/css/inventory.css'>";
+
+// Передаем CSRF токен в JavaScript
+echo "<script>";
+echo "window.glpi_csrf_token = '" . Session::getNewCSRFToken() . "';";
+echo "</script>";
+
 echo "<script src='/plugins/inventory/js/inventory.js'></script>";
 
 // Режим отладки (можно включить для диагностики)
