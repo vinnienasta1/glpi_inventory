@@ -209,7 +209,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const actualCount = itemsBuffer.filter(item => !item.isNotFound).length;
         const uniqueActual = new Set();
         itemsBuffer.forEach(item => {
-            if (!item.isNotFound) {
+            if (!item.isNotFound && !item.isDuplicate) {
                 uniqueActual.add(`${item.type_class}-${item.id}`);
             }
         });
@@ -344,7 +344,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const seenItems = new Set();
         
         itemsBuffer.forEach(item => {
-            if (!item.isNotFound) {
+            if (!item.isNotFound && !item.isDuplicate) {
                 const itemKey = `${item.type_class}-${item.id}`;
                 if (!seenItems.has(itemKey)) {
                     seenItems.add(itemKey);
@@ -542,21 +542,68 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        let changesCount = 0;
+        const actualItems = itemsBuffer.filter(item => !item.isNotFound);
         
-        itemsBuffer.forEach(item => {
-            if (!item.isNotFound) {
-                changes.forEach(change => {
-                    item[change.field] = change.value;
-                    changesCount++;
+        if (actualItems.length === 0) {
+            showNotification('Нет позиций для изменения', 'warning');
+            return;
+        }
+        
+        showNotification('Применяю изменения...', 'info');
+        
+        const requestData = {
+            items: actualItems,
+            changes: changes
+        };
+        
+        const headers = {
+            'Content-Type': 'application/json'
+        };
+        
+        if (typeof GLPI_CSRF_TOKEN !== 'undefined') {
+            headers['X-Glpi-Csrf-Token'] = GLPI_CSRF_TOKEN;
+        }
+        
+        fetch('/plugins/inventory/ajax/update.php', {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify(requestData),
+            credentials: 'same-origin'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.results) {
+                const res = data.results;
+                
+                itemsBuffer.forEach(item => {
+                    if (!item.isNotFound && !item.isDuplicate) {
+                        changes.forEach(change => {
+                            item[change.field] = change.value;
+                        });
+                    }
                 });
+                
+                closeBulkEditModal();
+                renderBuffer();
+                
+                let message = `Успешно обновлено: ${res.success} позиций`;
+                if (res.failed > 0) {
+                    message += `. Ошибок: ${res.failed}`;
+                }
+                
+                showNotification(message, res.failed > 0 ? 'warning' : 'success');
+                
+                if (res.errors && res.errors.length > 0) {
+                    console.error('Ошибки обновления:', res.errors);
+                }
+            } else {
+                showNotification('Ошибка при обновлении: ' + (data.error || 'Неизвестная ошибка'), 'error');
             }
+        })
+        .catch(error => {
+            console.error('Ошибка:', error);
+            showNotification('Ошибка соединения с сервером: ' + error.message, 'error');
         });
-        
-        closeBulkEditModal();
-        renderBuffer();
-        
-        showNotification(`Применены изменения: ${changes.length} полей для ${itemsBuffer.filter(item => !item.isNotFound).length} позиций`, 'success');
     }
     
     // Показать модальное окно настройки столбцов
