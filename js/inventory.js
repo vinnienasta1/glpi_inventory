@@ -209,12 +209,24 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="inventory-buffer-container">
                 <div class="inventory-buffer-header">
                     <h3>Буфер найденных позиций <span class="buffer-count">(${itemsBuffer.length})</span></h3>
-                    <button class="inventory-clear-buffer" onclick="clearBuffer()">Очистить буфер</button>
+                    <div class="inventory-buffer-actions">
+                        <button class="inventory-action-btn inventory-btn-primary" onclick="keepActualItems()">
+                            <i class="fas fa-filter"></i> Оставить актуальные
+                        </button>
+                        <button class="inventory-action-btn inventory-btn-warning" onclick="showBulkEditModal()">
+                            <i class="fas fa-edit"></i> Изменить
+                        </button>
+                        <button class="inventory-action-btn inventory-btn-info" onclick="showColumnsModal()">
+                            <i class="fas fa-columns"></i> Столбцы
+                        </button>
+                        <button class="inventory-action-btn inventory-btn-danger" onclick="clearBuffer()">
+                            <i class="fas fa-trash"></i> Очистить буфер
+                        </button>
+                    </div>
                 </div>
                 <table class="inventory-results-table">
                     <thead>
                         <tr>
-                            <th>Время</th>
                             <th>Поиск</th>
                             <th>Тип</th>
                             <th>Наименование</th>
@@ -222,6 +234,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             <th>Серийный номер</th>
                             <th>Департамент</th>
                             <th>Статус</th>
+                            <th>Местоположение</th>
+                            <th>Пользователь</th>
                             <th>Действия</th>
                         </tr>
                     </thead>
@@ -238,15 +252,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     ${escapeHtml(item.type)}${item.isDuplicate ? ' <small>(Дубликат)</small>' : ''}
                 </span>`;
             
-            const timeStr = item.timestamp.toLocaleTimeString('ru-RU', {
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit'
-            });
-            
             html += `
                 <tr class="${rowClass}">
-                    <td class="time-cell">${timeStr}</td>
                     <td class="search-term-cell">${escapeHtml(item.search_term)}</td>
                     <td>${typeDisplay}</td>
                     <td title="${escapeHtml(item.name)}">
@@ -256,6 +263,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     <td>${escapeHtml(item.serial || '-')}</td>
                     <td>${escapeHtml(item.group_name)}</td>
                     <td>${escapeHtml(item.state_name)}</td>
+                    <td title="${escapeHtml(item.location_name)}">
+                        ${escapeHtml(truncateText(item.location_name, 20))}
+                    </td>
+                    <td title="${escapeHtml(item.user_name)}">
+                        ${escapeHtml(truncateText(item.user_name, 20))}
+                    </td>
                     <td>
                         ${item.isNotFound ? 
                             '<span class="not-available">-</span>' :
@@ -302,6 +315,190 @@ document.addEventListener('DOMContentLoaded', function() {
             itemsBuffer.splice(index, 1);
             renderBuffer();
         }
+    }
+    
+    // Оставить только актуальные (убрать не найденные)
+    window.keepActualItems = function() {
+        const actualItems = itemsBuffer.filter(item => !item.isNotFound);
+        if (actualItems.length !== itemsBuffer.length) {
+            const removedCount = itemsBuffer.length - actualItems.length;
+            itemsBuffer = actualItems;
+            renderBuffer();
+            showNotification(`Удалено ${removedCount} не найденных позиций`, 'success');
+        } else {
+            showNotification('В буфере нет не найденных позиций', 'info');
+        }
+    }
+    
+    // Показать модальное окно массового редактирования
+    window.showBulkEditModal = function() {
+        const actualItems = itemsBuffer.filter(item => !item.isNotFound);
+        if (actualItems.length === 0) {
+            showNotification('В буфере нет позиций для редактирования', 'warning');
+            return;
+        }
+        
+        // Создаем модальное окно
+        const modalHtml = `
+            <div class="inventory-modal-overlay" onclick="closeBulkEditModal()">
+                <div class="inventory-modal" onclick="event.stopPropagation()">
+                    <div class="inventory-modal-header">
+                        <h3>Массовое изменение (${actualItems.length} позиций)</h3>
+                        <button class="inventory-modal-close" onclick="closeBulkEditModal()">&times;</button>
+                    </div>
+                    <div class="inventory-modal-body">
+                        <div class="inventory-form-group">
+                            <label>Новый департамент:</label>
+                            <input type="text" id="bulk-department" placeholder="Оставить пустым, чтобы не изменять">
+                        </div>
+                        <div class="inventory-form-group">
+                            <label>Новый статус:</label>
+                            <input type="text" id="bulk-status" placeholder="Оставить пустым, чтобы не изменять">
+                        </div>
+                        <div class="inventory-form-group">
+                            <label>Новое местоположение:</label>
+                            <input type="text" id="bulk-location" placeholder="Оставить пустым, чтобы не изменять">
+                        </div>
+                        <div class="inventory-form-group">
+                            <label>Новый пользователь:</label>
+                            <input type="text" id="bulk-user" placeholder="Оставить пустым, чтобы не изменять">
+                        </div>
+                    </div>
+                    <div class="inventory-modal-footer">
+                        <button class="inventory-action-btn inventory-btn-secondary" onclick="closeBulkEditModal()">
+                            Отмена
+                        </button>
+                        <button class="inventory-action-btn inventory-btn-primary" onclick="applyBulkEdit()">
+                            Применить изменения
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+    }
+    
+    // Закрыть модальное окно редактирования
+    window.closeBulkEditModal = function() {
+        const modal = document.querySelector('.inventory-modal-overlay');
+        if (modal) {
+            modal.remove();
+        }
+    }
+    
+    // Применить массовые изменения
+    window.applyBulkEdit = function() {
+        const department = document.getElementById('bulk-department').value.trim();
+        const status = document.getElementById('bulk-status').value.trim();
+        const location = document.getElementById('bulk-location').value.trim();
+        const user = document.getElementById('bulk-user').value.trim();
+        
+        let changesCount = 0;
+        
+        itemsBuffer.forEach(item => {
+            if (!item.isNotFound) {
+                if (department) {
+                    item.group_name = department;
+                    changesCount++;
+                }
+                if (status) {
+                    item.state_name = status;
+                    changesCount++;
+                }
+                if (location) {
+                    item.location_name = location;
+                    changesCount++;
+                }
+                if (user) {
+                    item.user_name = user;
+                    changesCount++;
+                }
+            }
+        });
+        
+        closeBulkEditModal();
+        renderBuffer();
+        
+        if (changesCount > 0) {
+            showNotification(`Применены изменения (${changesCount} полей)`, 'success');
+        } else {
+            showNotification('Изменения не были внесены', 'info');
+        }
+    }
+    
+    // Показать модальное окно настройки столбцов
+    window.showColumnsModal = function() {
+        const modalHtml = `
+            <div class="inventory-modal-overlay" onclick="closeColumnsModal()">
+                <div class="inventory-modal" onclick="event.stopPropagation()">
+                    <div class="inventory-modal-header">
+                        <h3>Настройка столбцов</h3>
+                        <button class="inventory-modal-close" onclick="closeColumnsModal()">&times;</button>
+                    </div>
+                    <div class="inventory-modal-body">
+                        <p>Выберите столбцы для отображения:</p>
+                        <div class="inventory-columns-list">
+                            <label><input type="checkbox" checked> Поиск</label>
+                            <label><input type="checkbox" checked> Тип</label>
+                            <label><input type="checkbox" checked> Наименование</label>
+                            <label><input type="checkbox" checked> Инв. номер</label>
+                            <label><input type="checkbox" checked> Серийный номер</label>
+                            <label><input type="checkbox" checked> Департамент</label>
+                            <label><input type="checkbox" checked> Статус</label>
+                            <label><input type="checkbox" checked> Местоположение</label>
+                            <label><input type="checkbox" checked> Пользователь</label>
+                            <label><input type="checkbox" checked> Действия</label>
+                        </div>
+                    </div>
+                    <div class="inventory-modal-footer">
+                        <button class="inventory-action-btn inventory-btn-secondary" onclick="closeColumnsModal()">
+                            Отмена
+                        </button>
+                        <button class="inventory-action-btn inventory-btn-primary" onclick="applyColumnsSettings()">
+                            Применить
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+    }
+    
+    // Закрыть модальное окно настройки столбцов
+    window.closeColumnsModal = function() {
+        const modal = document.querySelector('.inventory-modal-overlay');
+        if (modal) {
+            modal.remove();
+        }
+    }
+    
+    // Применить настройки столбцов
+    window.applyColumnsSettings = function() {
+        // Пока что просто закрываем модальное окно
+        // В будущем здесь будет логика скрытия/показа столбцов
+        closeColumnsModal();
+        showNotification('Настройки столбцов сохранены', 'success');
+    }
+    
+    // Показать уведомление
+    function showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.className = `inventory-notification inventory-notification-${type}`;
+        notification.innerHTML = `
+            <span>${message}</span>
+            <button onclick="this.parentElement.remove()">&times;</button>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        // Автоматически скрываем через 5 секунд
+        setTimeout(() => {
+            if (notification.parentElement) {
+                notification.remove();
+            }
+        }, 5000);
     }
     
     // Инициализация: показываем пустой буфер

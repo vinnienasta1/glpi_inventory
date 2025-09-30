@@ -207,19 +207,76 @@
     font-weight: normal;
 }
 
-.inventory-clear-buffer {
-    background: #dc3545;
-    color: white;
+/* Группа кнопок действий */
+.inventory-buffer-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+/* Базовые стили кнопок */
+.inventory-action-btn {
     border: none;
-    padding: 8px 16px;
+    padding: 8px 12px;
     border-radius: 4px;
     cursor: pointer;
     font-size: 14px;
-    transition: background-color 0.3s;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-weight: 500;
 }
 
-.inventory-clear-buffer:hover {
+.inventory-action-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+/* Цветовые схемы кнопок */
+.inventory-btn-primary {
+    background: #007bff;
+    color: white;
+}
+
+.inventory-btn-primary:hover {
+    background: #0056b3;
+}
+
+.inventory-btn-warning {
+    background: #ffc107;
+    color: #212529;
+}
+
+.inventory-btn-warning:hover {
+    background: #e0a800;
+}
+
+.inventory-btn-info {
+    background: #17a2b8;
+    color: white;
+}
+
+.inventory-btn-info:hover {
+    background: #138496;
+}
+
+.inventory-btn-danger {
+    background: #dc3545;
+    color: white;
+}
+
+.inventory-btn-danger:hover {
     background: #c82333;
+}
+
+.inventory-btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.inventory-btn-secondary:hover {
+    background: #545b62;
 }
 
 /* Стили для разных типов строк в буфере */
@@ -251,15 +308,7 @@
     content: " 🔍";
 }
 
-/* Стили для ячеек времени и поиска */
-.time-cell {
-    font-family: monospace;
-    font-size: 12px;
-    color: #6c757d;
-    white-space: nowrap;
-    width: 80px;
-}
-
+/* Стили для ячейки поиска */
 .search-term-cell {
     font-weight: 600;
     color: #495057;
@@ -267,6 +316,7 @@
     border-radius: 3px;
     padding: 4px 8px !important;
     font-family: monospace;
+    max-width: 120px;
 }
 
 /* Пустой буфер */
@@ -314,6 +364,207 @@
     }
 }
 
+/* Модальные окна */
+.inventory-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.inventory-modal {
+    background: white;
+    border-radius: 8px;
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    animation: slideIn 0.3s ease-out;
+}
+
+.inventory-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.inventory-modal-header h3 {
+    margin: 0;
+    color: #333;
+}
+
+.inventory-modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #6c757d;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.inventory-modal-close:hover {
+    color: #dc3545;
+}
+
+.inventory-modal-body {
+    padding: 20px;
+}
+
+.inventory-modal-footer {
+    padding: 20px;
+    border-top: 1px solid #dee2e6;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+/* Формы в модальных окнах */
+.inventory-form-group {
+    margin-bottom: 20px;
+}
+
+.inventory-form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+    color: #333;
+}
+
+.inventory-form-group input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+.inventory-form-group input:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+}
+
+/* Список столбцов */
+.inventory-columns-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 10px;
+}
+
+.inventory-columns-list label {
+    display: flex;
+    align-items: center;
+    padding: 8px;
+    background: #f8f9fa;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.inventory-columns-list label:hover {
+    background: #e9ecef;
+}
+
+.inventory-columns-list input[type="checkbox"] {
+    margin-right: 8px;
+}
+
+/* Уведомления */
+.inventory-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 15px 20px;
+    border-radius: 6px;
+    color: white;
+    font-weight: 500;
+    z-index: 1001;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    min-width: 300px;
+    animation: slideInRight 0.3s ease-out;
+}
+
+.inventory-notification button {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 0;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.inventory-notification-success {
+    background: #28a745;
+}
+
+.inventory-notification-info {
+    background: #17a2b8;
+}
+
+.inventory-notification-warning {
+    background: #ffc107;
+    color: #212529;
+}
+
+.inventory-notification-warning button {
+    color: #212529;
+}
+
+.inventory-notification-error {
+    background: #dc3545;
+}
+
+/* Анимации */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateY(-50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
 /* Адаптивность */
 @media (max-width: 768px) {
     .inventory-container {
@@ -341,19 +592,40 @@
     
     .inventory-buffer-header {
         flex-direction: column;
-        gap: 10px;
+        gap: 15px;
         text-align: center;
     }
     
-    .inventory-clear-buffer {
+    .inventory-buffer-actions {
+        justify-content: center;
         width: 100%;
     }
     
-    /* Скрываем колонки времени и поиска на мобильных */
-    .time-cell,
+    .inventory-action-btn {
+        flex: 1;
+        min-width: 120px;
+        justify-content: center;
+    }
+    
+    /* Скрываем столбец поиска на мобильных */
     .search-term-cell,
-    .inventory-results-table th:nth-child(1),
-    .inventory-results-table th:nth-child(2) {
+    .inventory-results-table th:nth-child(1) {
         display: none;
+    }
+    
+    /* Адаптивность модальных окон */
+    .inventory-modal {
+        width: 95%;
+        margin: 10px;
+    }
+    
+    .inventory-modal-footer {
+        flex-direction: column;
+    }
+    
+    .inventory-notification {
+        left: 10px;
+        right: 10px;
+        min-width: auto;
     }
 }
