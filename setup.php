@@ -4,11 +4,11 @@
  * 
  * Данный плагин реализует функционал поиска оборудования по инвентарным номерам
  * 
- * @version 1.0.0
+ * @version 1.0.1
  * @author Ваше имя
  */
 
-define('PLUGIN_INVENTORY_VERSION', '1.0.0');
+define('PLUGIN_INVENTORY_VERSION', '1.0.1');
 
 /**
  * Инициализация плагина

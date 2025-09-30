@@ -15,6 +15,14 @@ Html::header('Инвенторизация', $_SERVER['PHP_SELF'], "tools", "Plu
 echo "<link rel='stylesheet' type='text/css' href='/plugins/inventory/css/inventory.css'>";
 echo "<script src='/plugins/inventory/js/inventory.js'></script>";
 
+// Режим отладки (можно включить для диагностики)
+$debug_mode = false;
+if ($debug_mode) {
+    echo "<script>console.log('GLPI Inventory Plugin Debug Mode');</script>";
+    echo "<script>console.log('Current URL:', window.location.href);</script>";
+    echo "<script>console.log('Plugin path:', '/plugins/inventory/');</script>";
+}
+
 ?>
 
 <div class="inventory-container">

@@ -3,7 +3,22 @@
  * AJAX обработчик для поиска оборудования
  */
 
-include ("../../../inc/includes.php");
+// Определяем путь к GLPI
+$glpi_root = '';
+for ($i = 0; $i < 5; $i++) {
+    $test_path = str_repeat('../', $i) . 'inc/includes.php';
+    if (file_exists($test_path)) {
+        $glpi_root = str_repeat('../', $i);
+        break;
+    }
+}
+
+if (empty($glpi_root)) {
+    // Последняя попытка - стандартный путь
+    $glpi_root = '../../../';
+}
+
+include ($glpi_root . "inc/includes.php");
 
 // Проверка прав доступа
 Session::checkRight("config", READ);
@@ -62,6 +77,19 @@ try {
     ]);
     
 } catch (Exception $e) {
-    echo json_encode(['error' => 'Ошибка поиска: ' . $e->getMessage()]);
+    // Логируем ошибку
+    error_log("GLPI Inventory Plugin Error: " . $e->getMessage());
+    
+    // Отправляем пользователю безопасное сообщение
+    $error_message = 'Ошибка поиска: ';
+    if (strpos($e->getMessage(), 'database') !== false || strpos($e->getMessage(), 'DB') !== false) {
+        $error_message .= 'Проблема с подключением к базе данных';
+    } else if (strpos($e->getMessage(), 'Class') !== false && strpos($e->getMessage(), 'not found') !== false) {
+        $error_message .= 'Плагин не установлен правильно';
+    } else {
+        $error_message .= $e->getMessage();
+    }
+    
+    echo json_encode(['error' => $error_message]);
 }
 ?>

@@ -45,11 +45,28 @@ document.addEventListener('DOMContentLoaded', function() {
         const formData = new FormData();
         formData.append('search_serial', searchTerm);
         
-        fetch('/plugins/inventory/ajax/search.php', {
+        // Определяем базовый URL для AJAX запросов
+        let ajaxUrl;
+        const currentPath = window.location.pathname;
+        if (currentPath.includes('/plugins/inventory/')) {
+            // Мы находимся в плагине, используем относительный путь
+            ajaxUrl = currentPath.replace(/\/front\/.*$/, '/ajax/search.php');
+        } else {
+            // Используем абсолютный путь
+            ajaxUrl = window.location.origin + '/plugins/inventory/ajax/search.php';
+        }
+        
+        fetch(ajaxUrl, {
             method: 'POST',
-            body: formData
+            body: formData,
+            credentials: 'same-origin'
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.error) {
                 showError(data.error);
@@ -61,7 +78,13 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .catch(error => {
             console.error('Ошибка:', error);
-            showError('Ошибка соединения с сервером');
+            let errorMessage = 'Ошибка соединения с сервером';
+            if (error.message.includes('HTTP')) {
+                errorMessage = `Ошибка сервера: ${error.message}`;
+            } else if (error.name === 'SyntaxError') {
+                errorMessage = 'Ошибка обработки ответа сервера';
+            }
+            showError(errorMessage);
         })
         .finally(() => {
             // Включаем кнопку поиска
