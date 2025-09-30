@@ -161,6 +161,38 @@
     text-decoration: none;
 }
 
+/* Ячейка действий */
+.actions-cell {
+    white-space: nowrap;
+    width: 100px;
+}
+
+.actions-cell a,
+.actions-cell button {
+    margin-right: 5px;
+}
+
+/* Кнопка удаления */
+.inventory-delete-btn {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 4px 6px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: background-color 0.3s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    height: 24px;
+}
+
+.inventory-delete-btn:hover {
+    background: #c82333;
+}
+
 .inventory-stats {
     margin-top: 15px;
     padding: 10px 15px;
@@ -204,6 +236,11 @@
 
 .buffer-count {
     color: #007bff;
+    font-weight: normal;
+}
+
+.actual-count {
+    color: #28a745;
     font-weight: normal;
 }
 
@@ -482,6 +519,92 @@
 
 .inventory-columns-list input[type="checkbox"] {
     margin-right: 8px;
+}
+
+/* Стили для массового редактирования */
+.bulk-edit-modal {
+    max-width: 600px;
+}
+
+.bulk-edit-rule {
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: 15px;
+    margin-bottom: 15px;
+    background: #f8f9fa;
+}
+
+.rule-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.rule-field-select {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.rule-remove-btn {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 6px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-left: 10px;
+    font-size: 12px;
+}
+
+.rule-remove-btn:hover {
+    background: #c82333;
+}
+
+.rule-value-container {
+    margin-top: 10px;
+}
+
+.rule-value-select,
+.rule-value-input {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+.rule-value-select:focus,
+.rule-value-input:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+}
+
+.inventory-add-rule-btn {
+    background: #28a745;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: background-color 0.3s;
+    margin-bottom: 20px;
+}
+
+.inventory-add-rule-btn:hover {
+    background: #218838;
 }
 
 /* Уведомления */

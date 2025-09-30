@@ -205,10 +205,20 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
+        // Подсчитываем актуальные позиции (найденные и не дубликаты)
+        const actualCount = itemsBuffer.filter(item => !item.isNotFound).length;
+        const uniqueActual = new Set();
+        itemsBuffer.forEach(item => {
+            if (!item.isNotFound) {
+                uniqueActual.add(`${item.type_class}-${item.id}`);
+            }
+        });
+        const uniqueActualCount = uniqueActual.size;
+        
         let html = `
             <div class="inventory-buffer-container">
                 <div class="inventory-buffer-header">
-                    <h3>Буфер найденных позиций <span class="buffer-count">(${itemsBuffer.length})</span></h3>
+                    <h3>В буфере: <span class="buffer-count">${itemsBuffer.length}</span>; Актуальных: <span class="actual-count">${uniqueActualCount}</span></h3>
                     <div class="inventory-buffer-actions">
                         <button class="inventory-action-btn inventory-btn-primary" onclick="keepActualItems()">
                             <i class="fas fa-filter"></i> Оставить актуальные
@@ -234,6 +244,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <th>Серийный номер</th>
                             <th>Департамент</th>
                             <th>Статус</th>
+                            <th>Стеллаж</th>
                             <th>Местоположение</th>
                             <th>Пользователь</th>
                             <th>Действия</th>
@@ -242,7 +253,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <tbody>
         `;
         
-        itemsBuffer.forEach(item => {
+        itemsBuffer.forEach((item, index) => {
             const rowClass = item.isNotFound ? 'inventory-not-found-row' : 
                            item.isDuplicate ? 'inventory-duplicate-row' : '';
             
@@ -263,16 +274,26 @@ document.addEventListener('DOMContentLoaded', function() {
                     <td>${escapeHtml(item.serial || '-')}</td>
                     <td>${escapeHtml(item.group_name)}</td>
                     <td>${escapeHtml(item.state_name)}</td>
+                    <td title="${escapeHtml(item.contact || '-')}">
+                        ${escapeHtml(truncateText(item.contact || '-', 15))}
+                    </td>
                     <td title="${escapeHtml(item.location_name)}">
                         ${escapeHtml(truncateText(item.location_name, 20))}
                     </td>
                     <td title="${escapeHtml(item.user_name)}">
                         ${escapeHtml(truncateText(item.user_name, 20))}
                     </td>
-                    <td>
+                    <td class="actions-cell">
                         ${item.isNotFound ? 
-                            '<span class="not-available">-</span>' :
-                            `<a href="${item.url}" target="_blank" class="inventory-open-link">Открыть</a>`
+                            `<button class="inventory-delete-btn" onclick="removeFromBuffer(${index})" title="Удалить">
+                                <i class="fas fa-trash"></i>
+                            </button>` :
+                            `<a href="${item.url}" target="_blank" class="inventory-open-link" title="Открыть">
+                                <i class="fas fa-external-link-alt"></i>
+                            </a>
+                            <button class="inventory-delete-btn" onclick="removeFromBuffer(${index})" title="Удалить">
+                                <i class="fas fa-trash"></i>
+                            </button>`
                         }
                     </td>
                 </tr>
@@ -317,16 +338,28 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Оставить только актуальные (убрать не найденные)
+    // Оставить только актуальные (убрать не найденные и дубликаты)
     window.keepActualItems = function() {
-        const actualItems = itemsBuffer.filter(item => !item.isNotFound);
+        const actualItems = [];
+        const seenItems = new Set();
+        
+        itemsBuffer.forEach(item => {
+            if (!item.isNotFound) {
+                const itemKey = `${item.type_class}-${item.id}`;
+                if (!seenItems.has(itemKey)) {
+                    seenItems.add(itemKey);
+                    actualItems.push(item);
+                }
+            }
+        });
+        
         if (actualItems.length !== itemsBuffer.length) {
             const removedCount = itemsBuffer.length - actualItems.length;
             itemsBuffer = actualItems;
             renderBuffer();
-            showNotification(`Удалено ${removedCount} не найденных позиций`, 'success');
+            showNotification(`Удалено ${removedCount} позиций (не найденные и дубликаты)`, 'success');
         } else {
-            showNotification('В буфере нет не найденных позиций', 'info');
+            showNotification('В буфере только актуальные позиции', 'info');
         }
     }
     
@@ -341,28 +374,18 @@ document.addEventListener('DOMContentLoaded', function() {
         // Создаем модальное окно
         const modalHtml = `
             <div class="inventory-modal-overlay" onclick="closeBulkEditModal()">
-                <div class="inventory-modal" onclick="event.stopPropagation()">
+                <div class="inventory-modal bulk-edit-modal" onclick="event.stopPropagation()">
                     <div class="inventory-modal-header">
                         <h3>Массовое изменение (${actualItems.length} позиций)</h3>
                         <button class="inventory-modal-close" onclick="closeBulkEditModal()">&times;</button>
                     </div>
                     <div class="inventory-modal-body">
-                        <div class="inventory-form-group">
-                            <label>Новый департамент:</label>
-                            <input type="text" id="bulk-department" placeholder="Оставить пустым, чтобы не изменять">
+                        <div id="bulk-edit-rules">
+                            <!-- Правила изменения будут добавляться сюда -->
                         </div>
-                        <div class="inventory-form-group">
-                            <label>Новый статус:</label>
-                            <input type="text" id="bulk-status" placeholder="Оставить пустым, чтобы не изменять">
-                        </div>
-                        <div class="inventory-form-group">
-                            <label>Новое местоположение:</label>
-                            <input type="text" id="bulk-location" placeholder="Оставить пустым, чтобы не изменять">
-                        </div>
-                        <div class="inventory-form-group">
-                            <label>Новый пользователь:</label>
-                            <input type="text" id="bulk-user" placeholder="Оставить пустым, чтобы не изменять">
-                        </div>
+                        <button class="inventory-add-rule-btn" onclick="addBulkEditRule()">
+                            <i class="fas fa-plus"></i> Добавить правило
+                        </button>
                     </div>
                     <div class="inventory-modal-footer">
                         <button class="inventory-action-btn inventory-btn-secondary" onclick="closeBulkEditModal()">
@@ -377,6 +400,9 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
         
         document.body.insertAdjacentHTML('beforeend', modalHtml);
+        
+        // Добавляем первое правило по умолчанию
+        addBulkEditRule();
     }
     
     // Закрыть модальное окно редактирования
@@ -387,44 +413,150 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
+    // Добавить правило изменения
+    window.addBulkEditRule = function() {
+        const rulesContainer = document.getElementById('bulk-edit-rules');
+        const ruleIndex = rulesContainer.children.length;
+        
+        const ruleHtml = `
+            <div class="bulk-edit-rule" data-rule-index="${ruleIndex}">
+                <div class="rule-header">
+                    <select class="rule-field-select" onchange="updateRuleValues(${ruleIndex})">
+                        <option value="">Выберите поле для изменения</option>
+                        <option value="group_name">Департамент</option>
+                        <option value="state_name">Статус</option>
+                        <option value="contact">Стеллаж</option>
+                        <option value="location_name">Местоположение</option>
+                        <option value="user_name">Пользователь</option>
+                    </select>
+                    ${ruleIndex > 0 ? `<button class="rule-remove-btn" onclick="removeRule(${ruleIndex})" title="Удалить правило">
+                        <i class="fas fa-times"></i>
+                    </button>` : ''}
+                </div>
+                <div class="rule-value-container" id="rule-value-${ruleIndex}">
+                    <!-- Значения будут добавлены при выборе поля -->
+                </div>
+            </div>
+        `;
+        
+        rulesContainer.insertAdjacentHTML('beforeend', ruleHtml);
+    }
+    
+    // Обновить варианты значений для правила
+    window.updateRuleValues = function(ruleIndex) {
+        const fieldSelect = document.querySelector(`.bulk-edit-rule[data-rule-index="${ruleIndex}"] .rule-field-select`);
+        const valueContainer = document.getElementById(`rule-value-${ruleIndex}`);
+        const fieldType = fieldSelect.value;
+        
+        if (!fieldType) {
+            valueContainer.innerHTML = '';
+            return;
+        }
+        
+        let valueOptions = '';
+        
+        switch(fieldType) {
+            case 'group_name':
+                valueOptions = `
+                    <select class="rule-value-select">
+                        <option value="">Выберите департамент</option>
+                        <option value="IT отдел">IT отдел</option>
+                        <option value="Бухгалтерия">Бухгалтерия</option>
+                        <option value="Администрация">Администрация</option>
+                        <option value="Склад">Склад</option>
+                        <option value="Производство">Производство</option>
+                    </select>
+                `;
+                break;
+            case 'state_name':
+                valueOptions = `
+                    <select class="rule-value-select">
+                        <option value="">Выберите статус</option>
+                        <option value="В работе">В работе</option>
+                        <option value="На складе">На складе</option>
+                        <option value="В ремонте">В ремонте</option>
+                        <option value="Списано">Списано</option>
+                        <option value="Резерв">Резерв</option>
+                    </select>
+                `;
+                break;
+            case 'contact':
+                valueOptions = `
+                    <input type="text" class="rule-value-input" placeholder="Введите номер стеллажа">
+                `;
+                break;
+            case 'location_name':
+                valueOptions = `
+                    <select class="rule-value-select">
+                        <option value="">Выберите местоположение</option>
+                        <option value="Офис">Офис</option>
+                        <option value="Склад">Склад</option>
+                        <option value="Производство">Производство</option>
+                        <option value="Удаленно">Удаленно</option>
+                    </select>
+                `;
+                break;
+            case 'user_name':
+                valueOptions = `
+                    <select class="rule-value-select">
+                        <option value="">Выберите пользователя</option>
+                        <option value="Иванов И.И.">Иванов И.И.</option>
+                        <option value="Петров П.П.">Петров П.П.</option>
+                        <option value="Сидоров С.С.">Сидоров С.С.</option>
+                        <option value="Админ">Админ</option>
+                    </select>
+                `;
+                break;
+        }
+        
+        valueContainer.innerHTML = valueOptions;
+    }
+    
+    // Удалить правило
+    window.removeRule = function(ruleIndex) {
+        const rule = document.querySelector(`.bulk-edit-rule[data-rule-index="${ruleIndex}"]`);
+        if (rule) {
+            rule.remove();
+        }
+    }
+    
     // Применить массовые изменения
     window.applyBulkEdit = function() {
-        const department = document.getElementById('bulk-department').value.trim();
-        const status = document.getElementById('bulk-status').value.trim();
-        const location = document.getElementById('bulk-location').value.trim();
-        const user = document.getElementById('bulk-user').value.trim();
+        const rules = document.querySelectorAll('.bulk-edit-rule');
+        const changes = [];
+        
+        rules.forEach(rule => {
+            const fieldSelect = rule.querySelector('.rule-field-select');
+            const valueElement = rule.querySelector('.rule-value-select, .rule-value-input');
+            
+            if (fieldSelect.value && valueElement && valueElement.value) {
+                changes.push({
+                    field: fieldSelect.value,
+                    value: valueElement.value
+                });
+            }
+        });
+        
+        if (changes.length === 0) {
+            showNotification('Не выбраны поля для изменения', 'warning');
+            return;
+        }
         
         let changesCount = 0;
         
         itemsBuffer.forEach(item => {
             if (!item.isNotFound) {
-                if (department) {
-                    item.group_name = department;
+                changes.forEach(change => {
+                    item[change.field] = change.value;
                     changesCount++;
-                }
-                if (status) {
-                    item.state_name = status;
-                    changesCount++;
-                }
-                if (location) {
-                    item.location_name = location;
-                    changesCount++;
-                }
-                if (user) {
-                    item.user_name = user;
-                    changesCount++;
-                }
+                });
             }
         });
         
         closeBulkEditModal();
         renderBuffer();
         
-        if (changesCount > 0) {
-            showNotification(`Применены изменения (${changesCount} полей)`, 'success');
-        } else {
-            showNotification('Изменения не были внесены', 'info');
-        }
+        showNotification(`Применены изменения: ${changes.length} полей для ${itemsBuffer.filter(item => !item.isNotFound).length} позиций`, 'success');
     }
     
     // Показать модальное окно настройки столбцов
@@ -446,6 +578,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <label><input type="checkbox" checked> Серийный номер</label>
                             <label><input type="checkbox" checked> Департамент</label>
                             <label><input type="checkbox" checked> Статус</label>
+                            <label><input type="checkbox" checked> Стеллаж</label>
                             <label><input type="checkbox" checked> Местоположение</label>
                             <label><input type="checkbox" checked> Пользователь</label>
                             <label><input type="checkbox" checked> Действия</label>
