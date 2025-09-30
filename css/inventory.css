@@ -180,6 +180,140 @@
     margin-top: 20px;
 }
 
+/* Стили для буфера */
+.inventory-buffer-container {
+    margin-top: 20px;
+}
+
+.inventory-buffer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding: 15px;
+    background: #f1f3f4;
+    border-radius: 8px;
+    border-left: 4px solid #007bff;
+}
+
+.inventory-buffer-header h3 {
+    margin: 0;
+    color: #333;
+    font-size: 18px;
+}
+
+.buffer-count {
+    color: #007bff;
+    font-weight: normal;
+}
+
+.inventory-clear-buffer {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.3s;
+}
+
+.inventory-clear-buffer:hover {
+    background: #c82333;
+}
+
+/* Стили для разных типов строк в буфере */
+.inventory-not-found-row {
+    background-color: #f8f9fa !important;
+    color: #6c757d;
+}
+
+.inventory-duplicate-row {
+    background-color: #fff3cd !important;
+    border-left: 3px solid #ffc107;
+}
+
+.inventory-not-found-row:hover {
+    background-color: #e9ecef !important;
+}
+
+.inventory-duplicate-row:hover {
+    background-color: #ffeaa7 !important;
+}
+
+/* Стили для бейджей типов */
+.inventory-type-not-found {
+    background: #6c757d;
+    color: white;
+}
+
+.inventory-type-not-found::after {
+    content: " 🔍";
+}
+
+/* Стили для ячеек времени и поиска */
+.time-cell {
+    font-family: monospace;
+    font-size: 12px;
+    color: #6c757d;
+    white-space: nowrap;
+    width: 80px;
+}
+
+.search-term-cell {
+    font-weight: 600;
+    color: #495057;
+    background: #f8f9fa;
+    border-radius: 3px;
+    padding: 4px 8px !important;
+    font-family: monospace;
+}
+
+/* Пустой буфер */
+.inventory-no-buffer {
+    text-align: center;
+    padding: 40px;
+    color: #6c757d;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 2px dashed #dee2e6;
+}
+
+.inventory-no-buffer p {
+    margin: 0;
+    font-size: 16px;
+}
+
+/* Недоступные действия */
+.not-available {
+    color: #6c757d;
+    font-style: italic;
+}
+
+/* Маленький текст для дубликатов */
+.inventory-type-badge small {
+    font-size: 10px;
+    opacity: 0.8;
+    text-transform: lowercase;
+}
+
+/* Улучшенные ошибки */
+.inventory-error {
+    margin-bottom: 15px;
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        transform: translateY(-10px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
 /* Адаптивность */
 @media (max-width: 768px) {
     .inventory-container {
@@ -203,5 +337,23 @@
     .inventory-results-table th,
     .inventory-results-table td {
         padding: 8px 6px;
+    }
+    
+    .inventory-buffer-header {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
+    
+    .inventory-clear-buffer {
+        width: 100%;
+    }
+    
+    /* Скрываем колонки времени и поиска на мобильных */
+    .time-cell,
+    .search-term-cell,
+    .inventory-results-table th:nth-child(1),
+    .inventory-results-table th:nth-child(2) {
+        display: none;
     }
 }

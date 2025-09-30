@@ -12,6 +12,10 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
     
+    // Буфер для накопления позиций
+    let itemsBuffer = [];
+    let searchHistory = [];
+    
     // Обработчик отправки формы
     searchForm.addEventListener('submit', function(e) {
         e.preventDefault();
@@ -72,19 +76,86 @@ document.addEventListener('DOMContentLoaded', function() {
             if (data.error) {
                 showError(data.error);
             } else if (data.success) {
-                showResults(data);
+                addToBuffer(data, searchTerm);
             } else {
                 showError('Неизвестная ошибка при поиске');
             }
         })
         .catch(error => {
             console.error('Ошибка:', error);
-            showError('Ошибка соединения с сервером: ' + error.message);
+            // Добавляем "не найдено" в буфер при ошибке соединения  
+            addNotFoundToBuffer(searchTerm);
         })
         .finally(() => {
             // Включаем кнопку поиска
             searchBtn.disabled = false;
+            // Очищаем поле ввода после поиска
+            searchInput.value = '';
         });
+    }
+    
+    // Добавление результатов в буфер
+    function addToBuffer(data, searchTerm) {
+        // Записываем поиск в историю
+        searchHistory.unshift({
+            term: searchTerm,
+            timestamp: new Date(),
+            found: data.items.length > 0
+        });
+        
+        if (data.items.length === 0) {
+            // Не найдено
+            addNotFoundToBuffer(searchTerm);
+        } else {
+            // Найдены элементы
+            data.items.forEach(item => {
+                addItemToBuffer(item, searchTerm);
+            });
+        }
+        
+        renderBuffer();
+    }
+    
+    // Добавление "не найдено" в буфер
+    function addNotFoundToBuffer(searchTerm) {
+        const notFoundItem = {
+            id: 'not-found-' + Date.now(),
+            search_term: searchTerm,
+            type: 'Не найдено',
+            name: `Позиция "${searchTerm}" не найдена`,
+            otherserial: searchTerm,
+            serial: '-',
+            group_name: '-',
+            state_name: '-',
+            location_name: '-',
+            user_name: '-',
+            url: '#',
+            isNotFound: true,
+            timestamp: new Date()
+        };
+        
+        itemsBuffer.unshift(notFoundItem);
+        renderBuffer();
+    }
+    
+    // Добавление элемента в буфер
+    function addItemToBuffer(item, searchTerm) {
+        // Проверяем на дублирование
+        const existingIndex = itemsBuffer.findIndex(bufferItem => 
+            !bufferItem.isNotFound && 
+            bufferItem.id === item.id && 
+            bufferItem.type_class === item.type_class
+        );
+        
+        const bufferItem = {
+            ...item,
+            search_term: searchTerm,
+            timestamp: new Date(),
+            isDuplicate: existingIndex !== -1
+        };
+        
+        // Добавляем в начало буфера (новые сверху)
+        itemsBuffer.unshift(bufferItem);
     }
     
     // Показать индикатор загрузки
@@ -99,67 +170,97 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Показать ошибку
     function showError(message) {
-        resultsContainer.innerHTML = `
+        const errorHtml = `
             <div class="inventory-error">
                 <strong>Ошибка:</strong> ${escapeHtml(message)}
             </div>
         `;
+        
+        // Добавляем ошибку в начало контейнера, сохраняя буфер
+        const existingContent = resultsContainer.innerHTML;
+        if (existingContent.includes('inventory-buffer-container')) {
+            // Вставляем ошибку перед буфером
+            resultsContainer.innerHTML = errorHtml + existingContent;
+        } else {
+            resultsContainer.innerHTML = errorHtml;
+        }
+        
+        // Автоматически скрываем ошибку через 5 секунд
+        setTimeout(() => {
+            const errorElement = resultsContainer.querySelector('.inventory-error');
+            if (errorElement) {
+                errorElement.remove();
+            }
+        }, 5000);
     }
     
-    // Показать результаты
-    function showResults(data) {
-        if (data.items.length === 0) {
+    // Рендеринг буфера
+    function renderBuffer() {
+        if (itemsBuffer.length === 0) {
             resultsContainer.innerHTML = `
-                <div class="inventory-no-results">
-                    Оборудование с инвентарным номером "${escapeHtml(data.search_term)}" не найдено
+                <div class="inventory-no-buffer">
+                    <p>Буфер пуст. Введите инвентарный номер для поиска.</p>
                 </div>
             `;
             return;
         }
         
         let html = `
-            <table class="inventory-results-table">
-                <thead>
-                    <tr>
-                        <th>Тип</th>
-                        <th>Наименование</th>
-                        <th>Инв. номер</th>
-                        <th>Серийный номер</th>
-                        <th>Департамент</th>
-                        <th>Статус</th>
-                        <th>Местоположение</th>
-                        <th>Пользователь</th>
-                        <th>Действия</th>
-                    </tr>
-                </thead>
-                <tbody>
+            <div class="inventory-buffer-container">
+                <div class="inventory-buffer-header">
+                    <h3>Буфер найденных позиций <span class="buffer-count">(${itemsBuffer.length})</span></h3>
+                    <button class="inventory-clear-buffer" onclick="clearBuffer()">Очистить буфер</button>
+                </div>
+                <table class="inventory-results-table">
+                    <thead>
+                        <tr>
+                            <th>Время</th>
+                            <th>Поиск</th>
+                            <th>Тип</th>
+                            <th>Наименование</th>
+                            <th>Инв. номер</th>
+                            <th>Серийный номер</th>
+                            <th>Департамент</th>
+                            <th>Статус</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
         `;
         
-        data.items.forEach(item => {
+        itemsBuffer.forEach(item => {
+            const rowClass = item.isNotFound ? 'inventory-not-found-row' : 
+                           item.isDuplicate ? 'inventory-duplicate-row' : '';
+            
+            const typeDisplay = item.isNotFound ? 
+                '<span class="inventory-type-badge inventory-type-not-found">Не найдено</span>' :
+                `<span class="inventory-type-badge inventory-type-${item.type_class}">
+                    ${escapeHtml(item.type)}${item.isDuplicate ? ' <small>(Дубликат)</small>' : ''}
+                </span>`;
+            
+            const timeStr = item.timestamp.toLocaleTimeString('ru-RU', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            
             html += `
-                <tr>
-                    <td>
-                        <span class="inventory-type-badge inventory-type-${item.type_class}">
-                            ${escapeHtml(item.type)}
-                        </span>
-                    </td>
+                <tr class="${rowClass}">
+                    <td class="time-cell">${timeStr}</td>
+                    <td class="search-term-cell">${escapeHtml(item.search_term)}</td>
+                    <td>${typeDisplay}</td>
                     <td title="${escapeHtml(item.name)}">
-                        ${escapeHtml(truncateText(item.name, 30))}
+                        ${escapeHtml(truncateText(item.name, 25))}
                     </td>
                     <td>${escapeHtml(item.otherserial || '-')}</td>
                     <td>${escapeHtml(item.serial || '-')}</td>
                     <td>${escapeHtml(item.group_name)}</td>
                     <td>${escapeHtml(item.state_name)}</td>
-                    <td title="${escapeHtml(item.location_name)}">
-                        ${escapeHtml(truncateText(item.location_name, 20))}
-                    </td>
-                    <td title="${escapeHtml(item.user_name)}">
-                        ${escapeHtml(truncateText(item.user_name, 20))}
-                    </td>
                     <td>
-                        <a href="${item.url}" target="_blank" class="inventory-open-link">
-                            Открыть
-                        </a>
+                        ${item.isNotFound ? 
+                            '<span class="not-available">-</span>' :
+                            `<a href="${item.url}" target="_blank" class="inventory-open-link">Открыть</a>`
+                        }
                     </td>
                 </tr>
             `;
@@ -168,8 +269,6 @@ document.addEventListener('DOMContentLoaded', function() {
         html += `
                 </tbody>
             </table>
-            <div class="inventory-stats">
-                Найдено элементов: <strong>${data.count}</strong>
             </div>
         `;
         
@@ -189,6 +288,24 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!text || text.length <= maxLength) return text;
         return text.substring(0, maxLength - 3) + '...';
     }
+    
+    // Глобальная функция очистки буфера (вызывается из HTML)
+    window.clearBuffer = function() {
+        itemsBuffer = [];
+        searchHistory = [];
+        renderBuffer();
+    }
+    
+    // Функция удаления элемента из буфера
+    window.removeFromBuffer = function(index) {
+        if (index >= 0 && index < itemsBuffer.length) {
+            itemsBuffer.splice(index, 1);
+            renderBuffer();
+        }
+    }
+    
+    // Инициализация: показываем пустой буфер
+    renderBuffer();
     
     // Фокус на поле ввода при загрузке страницы
     searchInput.focus();
