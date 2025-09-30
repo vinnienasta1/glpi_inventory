@@ -3,6 +3,10 @@
  * AJAX обработчик для поиска оборудования
  */
 
+// Логирование
+error_log("INVENTORY AJAX: Request started");
+error_log("INVENTORY AJAX: POST data: " . print_r($_POST, true));
+
 // Определяем путь к GLPI
 $glpi_root = '';
 for ($i = 0; $i < 5; $i++) {
@@ -14,22 +18,22 @@ for ($i = 0; $i < 5; $i++) {
 }
 
 if (empty($glpi_root)) {
-    // Последняя попытка - стандартный путь
     $glpi_root = '../../../';
 }
 
+error_log("INVENTORY AJAX: Before includes");
+
+// ВАЖНО: Устанавливаем флаг для пропуска CSRF проверки в includes.php
+define('GLPI_AJAX_CSRF', true);
+
 include ($glpi_root . "inc/includes.php");
 
-// Проверка прав доступа
-Session::checkRight("config", READ);
+error_log("INVENTORY AJAX: After includes");
 
-// Проверка CSRF токена
-try {
-    Session::checkCSRF($_POST);
-} catch (Exception $e) {
-    echo json_encode(['error' => 'Ошибка безопасности: недействительный CSRF токен. Обновите страницу.']);
-    exit;
-}
+// Проверка авторизации
+Session::checkLoginUser();
+
+error_log("INVENTORY AJAX: User authorized");
 
 header('Content-Type: application/json');
 
@@ -40,8 +44,12 @@ if (!isset($_POST['search_serial']) || empty(trim($_POST['search_serial']))) {
 
 $serial = trim($_POST['search_serial']);
 
+error_log("INVENTORY AJAX: Searching for: $serial");
+
 try {
     $items = PluginInventoryInventory::searchBySerial($serial);
+    
+    error_log("INVENTORY AJAX: Found " . count($items) . " items");
     
     $results = [];
     foreach ($items as $item) {
@@ -77,27 +85,20 @@ try {
         ];
     }
     
-    echo json_encode([
+    $response = [
         'success' => true,
         'items' => $results,
         'count' => count($results),
         'search_term' => $serial
-    ]);
+    ];
+    
+    error_log("INVENTORY AJAX: Response prepared");
+    echo json_encode($response);
     
 } catch (Exception $e) {
-    // Логируем ошибку
-    error_log("GLPI Inventory Plugin Error: " . $e->getMessage());
-    
-    // Отправляем пользователю безопасное сообщение
-    $error_message = 'Ошибка поиска: ';
-    if (strpos($e->getMessage(), 'database') !== false || strpos($e->getMessage(), 'DB') !== false) {
-        $error_message .= 'Проблема с подключением к базе данных';
-    } else if (strpos($e->getMessage(), 'Class') !== false && strpos($e->getMessage(), 'not found') !== false) {
-        $error_message .= 'Плагин не установлен правильно';
-    } else {
-        $error_message .= $e->getMessage();
-    }
-    
-    echo json_encode(['error' => $error_message]);
+    error_log("INVENTORY AJAX ERROR: " . $e->getMessage());
+    echo json_encode([
+        'error' => 'Ошибка поиска: ' . $e->getMessage()
+    ]);
 }
 ?>

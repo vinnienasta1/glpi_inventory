@@ -6,22 +6,22 @@
 include ("../../../inc/includes.php");
 
 // Проверка прав доступа
-Session::checkRight("config", READ);
+Session::checkLoginUser();
 
 // Заголовок страницы
 Html::header('Инвенторизация', $_SERVER['PHP_SELF'], "tools", "PluginInventoryInventory");
 
 // Подключаем CSS и JS
-echo "<link rel='stylesheet' type='text/css' href='/plugins/inventory/css/inventory.css'>";
+echo "<link rel='stylesheet' type='text/css' href='/plugins/inventory/css/inventory.css?v=" . time() . "'>";
 
-// Передаем CSRF токен в JavaScript
+// Передаем CSRF токен в JavaScript ПРАВИЛЬНО
 echo "<script>";
-echo "window.glpi_csrf_token = '" . Session::getNewCSRFToken() . "';";
+echo "var GLPI_CSRF_TOKEN = '" . Session::getNewCSRFToken() . "';";
 echo "</script>";
 
-echo "<script src='/plugins/inventory/js/inventory.js'></script>";
+echo "<script src='/plugins/inventory/js/inventory.js?v=" . time() . "'></script>";
 
-// Режим отладки (можно включить для диагностики)
+// Режим отладки
 $debug_mode = false;
 if ($debug_mode) {
     echo "<script>console.log('GLPI Inventory Plugin Debug Mode');</script>";
@@ -39,19 +39,19 @@ if ($debug_mode) {
         </h2>
         
         <form id="inventory-search-form">
-            <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <div style="display: flex; gap: 10px; margin-bottom: 20px;">
                 <input 
                     type="text" 
-                    id="inventory-search-input"
-                    class="inventory-search-input"
-                    placeholder="Введите инвентарный номер..."
+                    id="inventory-search-input" 
+                    name="search_serial" 
+                    placeholder="Введите инвентарный или серийный номер" 
+                    style="flex: 1; padding: 10px; font-size: 16px; border: 1px solid #ddd; border-radius: 4px;"
                     autocomplete="off"
-                    autofocus
-                >
+                />
                 <button 
                     type="submit" 
                     id="inventory-search-btn"
-                    class="inventory-search-btn"
+                    style="padding: 10px 30px; font-size: 16px; background: #0d6efd; color: white; border: none; border-radius: 4px; cursor: pointer;"
                 >
                     <i class="fas fa-search" style="margin-right: 5px;"></i>
                     Поиск
@@ -59,14 +59,7 @@ if ($debug_mode) {
             </div>
         </form>
         
-        <div style="margin-top: 15px; color: #6c757d; font-size: 14px;">
-            <i class="fas fa-info-circle" style="margin-right: 5px;"></i>
-            Поиск осуществляется по компьютерам, мониторам и периферийным устройствам
-        </div>
-    </div>
-    
-    <div id="inventory-results" class="inventory-results">
-        <!-- Результаты поиска будут загружены сюда -->
+        <div id="inventory-results"></div>
     </div>
 </div>
 

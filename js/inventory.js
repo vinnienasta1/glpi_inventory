@@ -45,26 +45,20 @@ document.addEventListener('DOMContentLoaded', function() {
         const formData = new FormData();
         formData.append('search_serial', searchTerm);
         
-        // Добавляем CSRF токен
-        if (window.glpi_csrf_token) {
-            formData.append('_glpi_csrf_token', window.glpi_csrf_token);
+        // Готовим заголовки с CSRF токеном
+        const headers = {};
+        if (typeof GLPI_CSRF_TOKEN !== 'undefined') {
+            headers['X-Glpi-Csrf-Token'] = GLPI_CSRF_TOKEN;
         } else {
-            console.warn('CSRF token not found. Page may need to be refreshed.');
+            console.error('CSRF токен не найден!');
         }
         
-        // Определяем базовый URL для AJAX запросов
-        let ajaxUrl;
-        const currentPath = window.location.pathname;
-        if (currentPath.includes('/plugins/inventory/')) {
-            // Мы находимся в плагине, используем относительный путь
-            ajaxUrl = currentPath.replace(/\/front\/.*$/, '/ajax/search.php');
-        } else {
-            // Используем абсолютный путь
-            ajaxUrl = window.location.origin + '/plugins/inventory/ajax/search.php';
-        }
+        // Определяем URL для AJAX
+        const ajaxUrl = '/plugins/inventory/ajax/search.php';
         
         fetch(ajaxUrl, {
             method: 'POST',
+            headers: headers,
             body: formData,
             credentials: 'same-origin'
         })
@@ -85,13 +79,7 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .catch(error => {
             console.error('Ошибка:', error);
-            let errorMessage = 'Ошибка соединения с сервером';
-            if (error.message.includes('HTTP')) {
-                errorMessage = `Ошибка сервера: ${error.message}`;
-            } else if (error.name === 'SyntaxError') {
-                errorMessage = 'Ошибка обработки ответа сервера';
-            }
-            showError(errorMessage);
+            showError('Ошибка соединения с сервером: ' + error.message);
         })
         .finally(() => {
             // Включаем кнопку поиска

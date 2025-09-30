@@ -44,15 +44,16 @@ class PluginInventoryInventory extends CommonGLPI {
         $types = ['Computer', 'Monitor', 'Peripheral'];
         
         foreach ($types as $type) {
-            $table = strtolower($type) . 's';
+            $table = 'glpi_' . strtolower($type) . 's';
             
             $iterator = $DB->request([
                 'SELECT' => ['id', 'name', 'otherserial', 'serial', 'groups_id', 'states_id', 'locations_id', 'users_id', 'comment'],
                 'FROM' => $table,
                 'WHERE' => [
+                    'is_deleted' => 0,
                     'OR' => [
-                        ['otherserial' => ['LIKE', '%' . $serial . '%']],
-                        ['serial' => ['LIKE', '%' . $serial . '%']]
+                        'otherserial' => ['LIKE', '%' . $DB->escape($serial) . '%'],
+                        'serial' => ['LIKE', '%' . $DB->escape($serial) . '%']
                     ]
                 ]
             ]);
@@ -107,7 +108,7 @@ class PluginInventoryInventory extends CommonGLPI {
         if ($item['users_id'] > 0) {
             $user = new User();
             if ($user->getFromDB($item['users_id'])) {
-                $extended['user_name'] = $user->fields['realname'] . ' ' . $user->fields['firstname'];
+                $extended['user_name'] = trim($user->fields['realname'] . ' ' . $user->fields['firstname']);
             }
         }
         
