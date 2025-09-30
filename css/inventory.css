@@ -752,3 +752,76 @@
         min-width: auto;
     }
 }
+
+/* Модальное окно настройки столбцов */
+.columns-modal {
+    max-width: 500px;
+    max-height: 80vh;
+}
+
+.columns-list {
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 10px;
+    background: #f8f9fa;
+}
+
+.column-item {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    margin-bottom: 8px;
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    cursor: move;
+    transition: all 0.2s;
+}
+
+.column-item:hover {
+    border-color: #0d6efd;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.column-item.dragging {
+    opacity: 0.5;
+    transform: rotate(2deg);
+}
+
+.column-drag-handle {
+    margin-right: 10px;
+    color: #6c757d;
+    font-size: 18px;
+    cursor: grab;
+}
+
+.column-drag-handle:active {
+    cursor: grabbing;
+}
+
+.column-label {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    cursor: pointer;
+    margin: 0;
+}
+
+.column-checkbox {
+    margin-right: 10px;
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.column-label span {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* Скрытые столбцы */
+.column-hidden {
+    display: none !important;
+}

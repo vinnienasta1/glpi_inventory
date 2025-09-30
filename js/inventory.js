@@ -14,6 +14,117 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Буфер для накопления позиций
     let itemsBuffer = [];
+
+
+// ============================================
+// СИСТЕМА УПРАВЛЕНИЯ СТОЛБЦАМИ
+// ============================================
+
+// Глобальная конфигурация столбцов
+let columnsConfig = {
+    'search_term': { name: 'Поиск', visible: true, order: 0, key: 'search_term' },
+    'type': { name: 'Тип', visible: true, order: 1, key: 'type' },
+    'name': { name: 'Наименование', visible: true, order: 2, key: 'name' },
+    'otherserial': { name: 'Инв. номер', visible: true, order: 3, key: 'otherserial' },
+    'serial': { name: 'Серийный номер', visible: true, order: 4, key: 'serial' },
+    'group_name': { name: 'Департамент', visible: true, order: 5, key: 'group_name' },
+    'state_name': { name: 'Статус', visible: true, order: 6, key: 'state_name' },
+    'contact': { name: 'Стеллаж', visible: true, order: 7, key: 'contact' },
+    'location_name': { name: 'Местоположение', visible: true, order: 8, key: 'location_name' },
+    'user_name': { name: 'Пользователь', visible: true, order: 9, key: 'user_name' },
+    'comment': { name: 'Комментарий', visible: false, order: 10, key: 'comment' },
+    'actions': { name: 'Действия', visible: true, order: 11, key: 'actions' }
+};
+
+// Загрузить настройки столбцов из localStorage
+function loadColumnsConfig() {
+    const saved = localStorage.getItem('inventory_columns_config');
+    if (saved) {
+        try {
+            const savedConfig = JSON.parse(saved);
+            // Обновляем только существующие столбцы
+            Object.keys(savedConfig).forEach(key => {
+                if (columnsConfig[key]) {
+                    columnsConfig[key] = savedConfig[key];
+                }
+            });
+        } catch (e) {
+            console.error('Ошибка загрузки настроек столбцов:', e);
+        }
+    }
+}
+
+// Сохранить настройки столбцов в localStorage
+function saveColumnsConfig() {
+    localStorage.setItem('inventory_columns_config', JSON.stringify(columnsConfig));
+}
+
+// Получить отсортированный список видимых столбцов
+function getVisibleColumns() {
+    return Object.entries(columnsConfig)
+        .filter(([key, config]) => config.visible)
+        .sort((a, b) => a[1].order - b[1].order)
+        .map(([key, config]) => ({ key, ...config }));
+}
+
+// Получить отсортированный список всех столбцов
+function getAllColumns() {
+    return Object.entries(columnsConfig)
+        .sort((a, b) => a[1].order - b[1].order)
+        .map(([key, config]) => ({ key, ...config }));
+}
+
+// Получить значение ячейки по ключу столбца
+function getCellValue(item, columnKey) {
+    switch(columnKey) {
+        case 'search_term':
+            return escapeHtml(item.search_term);
+        case 'type':
+            if (item.isNotFound) {
+                return '<span class="inventory-type-badge inventory-type-not-found">Не найдено</span>';
+            }
+            return `<span class="inventory-type-badge inventory-type-${item.type_class}">
+                ${escapeHtml(item.type)}${item.isDuplicate ? ' <small>(Дубликат)</small>' : ''}
+            </span>`;
+        case 'name':
+            return escapeHtml(truncateText(item.name || '-', 30));
+        case 'otherserial':
+            return escapeHtml(item.otherserial || '-');
+        case 'serial':
+            return escapeHtml(item.serial || '-');
+        case 'group_name':
+            return escapeHtml(item.group_name || '-');
+        case 'state_name':
+            return escapeHtml(item.state_name || '-');
+        case 'contact':
+            return escapeHtml(item.contact || '-');
+        case 'location_name':
+            return escapeHtml(truncateText(item.location_name || '-', 20));
+        case 'user_name':
+            return escapeHtml(truncateText(item.user_name || '-', 20));
+        case 'comment':
+            return escapeHtml(truncateText(item.comment || '-', 30));
+        case 'actions':
+            if (item.isNotFound) {
+                return `<button class="inventory-delete-btn" onclick="removeBufferItem(${item.index})">
+                    <i class="fas fa-trash"></i> Удалить
+                </button>`;
+            }
+            return `<a href="${item.url}" target="_blank" class="inventory-open-link">
+                <i class="fas fa-external-link-alt"></i> Открыть
+            </a>
+            <button class="inventory-delete-btn" onclick="removeBufferItem(${item.index})">
+                <i class="fas fa-trash"></i>
+            </button>`;
+        default:
+            return '-';
+    }
+}
+
+// Загружаем настройки при загрузке страницы
+loadColumnsConfig();
+
+
     let searchHistory = [];
     
     // Обработчик отправки формы
@@ -205,7 +316,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        // Подсчитываем актуальные позиции (найденные и не дубликаты)
+        // Подсчитываем актуальные позиции
         const actualCount = itemsBuffer.filter(item => !item.isNotFound).length;
         const uniqueActual = new Set();
         itemsBuffer.forEach(item => {
@@ -214,6 +325,15 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
         const uniqueActualCount = uniqueActual.size;
+        
+        // Получаем видимые столбцы
+        const visibleColumns = getVisibleColumns();
+        
+        // Генерируем заголовки таблицы
+        let headersHtml = '';
+        visibleColumns.forEach(col => {
+            headersHtml += `<th>${col.name}</th>`;
+        });
         
         let html = `
             <div class="inventory-buffer-container">
@@ -237,67 +357,28 @@ document.addEventListener('DOMContentLoaded', function() {
                 <table class="inventory-results-table">
                     <thead>
                         <tr>
-                            <th>Поиск</th>
-                            <th>Тип</th>
-                            <th>Наименование</th>
-                            <th>Инв. номер</th>
-                            <th>Серийный номер</th>
-                            <th>Департамент</th>
-                            <th>Статус</th>
-                            <th>Стеллаж</th>
-                            <th>Местоположение</th>
-                            <th>Пользователь</th>
-                            <th>Действия</th>
+                            ${headersHtml}
                         </tr>
                     </thead>
                     <tbody>
         `;
         
+        // Генерируем строки таблицы
         itemsBuffer.forEach((item, index) => {
             const rowClass = item.isNotFound ? 'inventory-not-found-row' : 
                            item.isDuplicate ? 'inventory-duplicate-row' : '';
             
-            const typeDisplay = item.isNotFound ? 
-                '<span class="inventory-type-badge inventory-type-not-found">Не найдено</span>' :
-                `<span class="inventory-type-badge inventory-type-${item.type_class}">
-                    ${escapeHtml(item.type)}${item.isDuplicate ? ' <small>(Дубликат)</small>' : ''}
-                </span>`;
+            item.index = index; // Добавляем индекс для функции удаления
             
-            html += `
-                <tr class="${rowClass}">
-                    <td class="search-term-cell">${escapeHtml(item.search_term)}</td>
-                    <td>${typeDisplay}</td>
-                    <td title="${escapeHtml(item.name)}">
-                        ${escapeHtml(truncateText(item.name, 25))}
-                    </td>
-                    <td>${escapeHtml(item.otherserial || '-')}</td>
-                    <td>${escapeHtml(item.serial || '-')}</td>
-                    <td>${escapeHtml(item.group_name)}</td>
-                    <td>${escapeHtml(item.state_name)}</td>
-                    <td title="${escapeHtml(item.contact || '-')}">
-                        ${escapeHtml(truncateText(item.contact || '-', 15))}
-                    </td>
-                    <td title="${escapeHtml(item.location_name)}">
-                        ${escapeHtml(truncateText(item.location_name, 20))}
-                    </td>
-                    <td title="${escapeHtml(item.user_name)}">
-                        ${escapeHtml(truncateText(item.user_name, 20))}
-                    </td>
-                    <td class="actions-cell">
-                        ${item.isNotFound ? 
-                            `<button class="inventory-delete-btn" onclick="removeFromBuffer(${index})" title="Удалить">
-                                <i class="fas fa-trash"></i>
-                            </button>` :
-                            `<a href="${item.url}" target="_blank" class="inventory-open-link" title="Открыть">
-                                <i class="fas fa-external-link-alt"></i>
-                            </a>
-                            <button class="inventory-delete-btn" onclick="removeFromBuffer(${index})" title="Удалить">
-                                <i class="fas fa-trash"></i>
-                            </button>`
-                        }
-                    </td>
-                </tr>
-            `;
+            let rowHtml = '';
+            visibleColumns.forEach(col => {
+                const cellValue = getCellValue(item, col.key);
+                const titleAttr = ['name', 'location_name', 'user_name', 'contact', 'comment'].includes(col.key) 
+                    ? `title="${escapeHtml(item[col.key] || '-')}"` : '';
+                rowHtml += `<td ${titleAttr}>${cellValue}</td>`;
+            });
+            
+            html += `<tr class="${rowClass}">${rowHtml}</tr>`;
         });
         
         html += `
@@ -308,6 +389,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         resultsContainer.innerHTML = html;
     }
+
     
     // Экранирование HTML
     function escapeHtml(text) {
@@ -611,36 +693,47 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Показать модальное окно настройки столбцов
+    // Показать модальное окно настройки столбцов
     window.showColumnsModal = function() {
+        const sortedColumns = getAllColumns();
+        
+        let columnsHtml = '';
+        sortedColumns.forEach((col, index) => {
+            columnsHtml += `
+                <div class="column-item" draggable="true" data-column-key="${col.key}" data-index="${index}">
+                    <div class="column-drag-handle">
+                        <i class="fas fa-grip-vertical"></i>
+                    </div>
+                    <label class="column-label">
+                        <input type="checkbox" class="column-checkbox" data-column-key="${col.key}" ${col.visible ? 'checked' : ''}>
+                        <span>${col.name}</span>
+                    </label>
+                </div>
+            `;
+        });
+        
         const modalHtml = `
             <div class="inventory-modal-overlay" onclick="closeColumnsModal()">
-                <div class="inventory-modal" onclick="event.stopPropagation()">
+                <div class="inventory-modal columns-modal" onclick="event.stopPropagation()">
                     <div class="inventory-modal-header">
-                        <h3>Настройка столбцов</h3>
+                        <h3><i class="fas fa-columns"></i> Настройка столбцов</h3>
                         <button class="inventory-modal-close" onclick="closeColumnsModal()">&times;</button>
                     </div>
                     <div class="inventory-modal-body">
-                        <p>Выберите столбцы для отображения:</p>
-                        <div class="inventory-columns-list">
-                            <label><input type="checkbox" checked> Поиск</label>
-                            <label><input type="checkbox" checked> Тип</label>
-                            <label><input type="checkbox" checked> Наименование</label>
-                            <label><input type="checkbox" checked> Инв. номер</label>
-                            <label><input type="checkbox" checked> Серийный номер</label>
-                            <label><input type="checkbox" checked> Департамент</label>
-                            <label><input type="checkbox" checked> Статус</label>
-                            <label><input type="checkbox" checked> Стеллаж</label>
-                            <label><input type="checkbox" checked> Местоположение</label>
-                            <label><input type="checkbox" checked> Пользователь</label>
-                            <label><input type="checkbox" checked> Действия</label>
+                        <p><i class="fas fa-info-circle"></i> Перетащите столбцы для изменения порядка, используйте чекбоксы для включения/выключения</p>
+                        <div class="columns-list" id="columns-list">
+                            ${columnsHtml}
                         </div>
                     </div>
                     <div class="inventory-modal-footer">
+                        <button class="inventory-action-btn inventory-btn-secondary" onclick="resetColumnsSettings()">
+                            <i class="fas fa-undo"></i> Сбросить
+                        </button>
                         <button class="inventory-action-btn inventory-btn-secondary" onclick="closeColumnsModal()">
                             Отмена
                         </button>
                         <button class="inventory-action-btn inventory-btn-primary" onclick="applyColumnsSettings()">
-                            Применить
+                            <i class="fas fa-check"></i> Применить
                         </button>
                     </div>
                 </div>
@@ -648,6 +741,103 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
         
         document.body.insertAdjacentHTML('beforeend', modalHtml);
+        initColumnsDragAndDrop();
+    }
+    
+    // Инициализация drag-and-drop
+    function initColumnsDragAndDrop() {
+        const columnsList = document.getElementById('columns-list');
+        if (!columnsList) return;
+        
+        const columnItems = columnsList.querySelectorAll('.column-item');
+        let draggedItem = null;
+        
+        columnItems.forEach(item => {
+            item.addEventListener('dragstart', function(e) {
+                draggedItem = this;
+                this.classList.add('dragging');
+                e.dataTransfer.effectAllowed = 'move';
+            });
+            
+            item.addEventListener('dragend', function() {
+                this.classList.remove('dragging');
+                draggedItem = null;
+            });
+            
+            item.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                if (draggedItem && draggedItem !== this) {
+                    const afterElement = getDragAfterElement(columnsList, e.clientY);
+                    if (afterElement == null) {
+                        columnsList.appendChild(draggedItem);
+                    } else {
+                        columnsList.insertBefore(draggedItem, afterElement);
+                    }
+                }
+            });
+        });
+    }
+    
+    function getDragAfterElement(container, y) {
+        const draggableElements = [...container.querySelectorAll('.column-item:not(.dragging)')];
+        
+        return draggableElements.reduce((closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = y - box.top - box.height / 2;
+            
+            if (offset < 0 && offset > closest.offset) {
+                return { offset: offset, element: child };
+            } else {
+                return closest;
+            }
+        }, { offset: Number.NEGATIVE_INFINITY }).element;
+    }
+    
+    // Применить настройки столбцов
+    window.applyColumnsSettings = function() {
+        const columnsList = document.getElementById('columns-list');
+        if (!columnsList) return;
+        
+        const columnItems = columnsList.querySelectorAll('.column-item');
+        
+        // Обновляем порядок и видимость
+        columnItems.forEach((item, index) => {
+            const key = item.dataset.columnKey;
+            const checkbox = item.querySelector('.column-checkbox');
+            if (columnsConfig[key]) {
+                columnsConfig[key].order = index;
+                columnsConfig[key].visible = checkbox.checked;
+            }
+        });
+        
+        saveColumnsConfig();
+        closeColumnsModal();
+        renderBuffer();
+        showNotification('Настройки столбцов применены', 'success');
+    }
+    
+    // Сбросить настройки столбцов
+    window.resetColumnsSettings = function() {
+        if (confirm('Вы уверены, что хотите сбросить настройки столбцов?')) {
+            localStorage.removeItem('inventory_columns_config');
+            columnsConfig = {
+                'search_term': { name: 'Поиск', visible: true, order: 0, key: 'search_term' },
+                'type': { name: 'Тип', visible: true, order: 1, key: 'type' },
+                'name': { name: 'Наименование', visible: true, order: 2, key: 'name' },
+                'otherserial': { name: 'Инв. номер', visible: true, order: 3, key: 'otherserial' },
+                'serial': { name: 'Серийный номер', visible: true, order: 4, key: 'serial' },
+                'group_name': { name: 'Департамент', visible: true, order: 5, key: 'group_name' },
+                'state_name': { name: 'Статус', visible: true, order: 6, key: 'state_name' },
+                'contact': { name: 'Стеллаж', visible: true, order: 7, key: 'contact' },
+                'location_name': { name: 'Местоположение', visible: true, order: 8, key: 'location_name' },
+                'user_name': { name: 'Пользователь', visible: true, order: 9, key: 'user_name' },
+                'comment': { name: 'Комментарий', visible: false, order: 10, key: 'comment' },
+                'actions': { name: 'Действия', visible: true, order: 11, key: 'actions' }
+            };
+            closeColumnsModal();
+            renderBuffer();
+            showNotification('Настройки столбцов сброшены', 'info');
+        }
     }
     
     // Закрыть модальное окно настройки столбцов
@@ -657,16 +847,8 @@ document.addEventListener('DOMContentLoaded', function() {
             modal.remove();
         }
     }
-    
-    // Применить настройки столбцов
-    window.applyColumnsSettings = function() {
-        // Пока что просто закрываем модальное окно
-        // В будущем здесь будет логика скрытия/показа столбцов
-        closeColumnsModal();
-        showNotification('Настройки столбцов сохранены', 'success');
-    }
-    
-    // Показать уведомление
+
+        // Показать уведомление
     function showNotification(message, type = 'info') {
         const notification = document.createElement('div');
         notification.className = `inventory-notification inventory-notification-${type}`;
@@ -685,6 +867,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 5000);
     }
     
+    // Загружаем настройки столбцов
+    loadColumnsConfig();
+
     // Инициализация: показываем пустой буфер
     renderBuffer();
     
