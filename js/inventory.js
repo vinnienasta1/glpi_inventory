@@ -453,64 +453,68 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        let valueOptions = '';
+        // Для стеллажа - просто текстовое поле
+        if (fieldType === 'contact') {
+            valueContainer.innerHTML = `
+                <input type="text" class="rule-value-input" placeholder="Введите номер стеллажа">
+            `;
+            return;
+        }
         
+        // Определяем тип данных для загрузки
+        let dataType = '';
         switch(fieldType) {
             case 'group_name':
-                valueOptions = `
-                    <select class="rule-value-select">
-                        <option value="">Выберите департамент</option>
-                        <option value="IT отдел">IT отдел</option>
-                        <option value="Бухгалтерия">Бухгалтерия</option>
-                        <option value="Администрация">Администрация</option>
-                        <option value="Склад">Склад</option>
-                        <option value="Производство">Производство</option>
-                    </select>
-                `;
+                dataType = 'groups';
                 break;
             case 'state_name':
-                valueOptions = `
-                    <select class="rule-value-select">
-                        <option value="">Выберите статус</option>
-                        <option value="В работе">В работе</option>
-                        <option value="На складе">На складе</option>
-                        <option value="В ремонте">В ремонте</option>
-                        <option value="Списано">Списано</option>
-                        <option value="Резерв">Резерв</option>
-                    </select>
-                `;
-                break;
-            case 'contact':
-                valueOptions = `
-                    <input type="text" class="rule-value-input" placeholder="Введите номер стеллажа">
-                `;
+                dataType = 'states';
                 break;
             case 'location_name':
-                valueOptions = `
-                    <select class="rule-value-select">
-                        <option value="">Выберите местоположение</option>
-                        <option value="Офис">Офис</option>
-                        <option value="Склад">Склад</option>
-                        <option value="Производство">Производство</option>
-                        <option value="Удаленно">Удаленно</option>
-                    </select>
-                `;
+                dataType = 'locations';
                 break;
             case 'user_name':
-                valueOptions = `
-                    <select class="rule-value-select">
-                        <option value="">Выберите пользователя</option>
-                        <option value="Иванов И.И.">Иванов И.И.</option>
-                        <option value="Петров П.П.">Петров П.П.</option>
-                        <option value="Сидоров С.С.">Сидоров С.С.</option>
-                        <option value="Админ">Админ</option>
-                    </select>
-                `;
+                dataType = 'users';
                 break;
         }
         
-        valueContainer.innerHTML = valueOptions;
+        if (!dataType) {
+            valueContainer.innerHTML = '';
+            return;
+        }
+        
+        // Показываем загрузку
+        valueContainer.innerHTML = '<select class="rule-value-select"><option>Загрузка...</option></select>';
+        
+        // Загружаем данные через AJAX
+        const headers = {};
+        if (typeof GLPI_CSRF_TOKEN !== 'undefined') {
+            headers['X-Glpi-Csrf-Token'] = GLPI_CSRF_TOKEN;
+        }
+        
+        fetch(`/plugins/inventory/ajax/get_values.php?type=${dataType}`, {
+            method: 'GET',
+            headers: headers,
+            credentials: 'same-origin'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.data) {
+                let options = '<option value="">Выберите значение</option>';
+                data.data.forEach(item => {
+                    options += `<option value="${escapeHtml(item.name)}">${escapeHtml(item.name)}</option>`;
+                });
+                valueContainer.innerHTML = `<select class="rule-value-select">${options}</select>`;
+            } else {
+                valueContainer.innerHTML = '<select class="rule-value-select"><option>Ошибка загрузки</option></select>';
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка загрузки значений:', error);
+            valueContainer.innerHTML = '<select class="rule-value-select"><option>Ошибка загрузки</option></select>';
+        });
     }
+
     
     // Удалить правило
     window.removeRule = function(ruleIndex) {
