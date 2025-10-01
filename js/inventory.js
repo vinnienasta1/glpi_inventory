@@ -293,32 +293,13 @@ loadColumnsConfig();
                         <div class="selection-items-list">
                             ${items.map((item, index) => `
                                 <div class="selection-item" onclick="selectItem(${index})">
-                                    <div class="selection-item-header">
+                                    <div class="selection-item-content">
                                         <span class="inventory-type-badge inventory-type-${item.type_class}">
                                             ${escapeHtml(item.type)}
                                         </span>
-                                        <strong>${escapeHtml(item.name)}</strong>
-                                    </div>
-                                    <div class="selection-item-details">
-                                        <div class="detail-row">
-                                            <span class="detail-label">Инв. номер:</span>
-                                            <span class="detail-value">${escapeHtml(item.otherserial || '-')}</span>
-                                        </div>
-                                        <div class="detail-row">
-                                            <span class="detail-label">Серийный номер:</span>
-                                            <span class="detail-value">${escapeHtml(item.serial || '-')}</span>
-                                        </div>
-                                        <div class="detail-row">
-                                            <span class="detail-label">Департамент:</span>
-                                            <span class="detail-value">${escapeHtml(item.group_name || '-')}</span>
-                                        </div>
-                                        <div class="detail-row">
-                                            <span class="detail-label">Статус:</span>
-                                            <span class="detail-value">${escapeHtml(item.state_name || '-')}</span>
-                                        </div>
-                                        <div class="detail-row">
-                                            <span class="detail-label">Местоположение:</span>
-                                            <span class="detail-value">${escapeHtml(item.location_name || '-')}</span>
+                                        <div class="selection-item-info">
+                                            <strong class="item-name">${escapeHtml(item.name)}</strong>
+                                            <span class="item-department">${escapeHtml(item.group_name || 'Не указан')}</span>
                                         </div>
                                     </div>
                                 </div>

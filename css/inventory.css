@@ -609,7 +609,7 @@
 
 /* Модальное окно выбора */
 .selection-modal {
-    max-width: 700px;
+    max-width: 600px;
     max-height: 80vh;
 }
 
@@ -622,7 +622,7 @@
 }
 
 .selection-item {
-    padding: 15px;
+    padding: 10px 15px;
     border-bottom: 1px solid #dee2e6;
     cursor: pointer;
     transition: background-color 0.3s;
@@ -638,41 +638,30 @@
     transform: translateX(2px);
 }
 
-.selection-item-header {
+.selection-item-content {
     display: flex;
     align-items: center;
-    gap: 10px;
-    margin-bottom: 10px;
+    gap: 12px;
 }
 
-.selection-item-header strong {
-    color: #333;
-    font-size: 16px;
-}
-
-.selection-item-details {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 8px;
-    font-size: 14px;
-}
-
-.detail-row {
+.selection-item-info {
     display: flex;
-    justify-content: space-between;
-    padding: 2px 0;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
 }
 
-.detail-label {
-    font-weight: 600;
-    color: #666;
-    min-width: 100px;
-}
-
-.detail-value {
+.item-name {
+    font-size: 15px;
     color: #333;
-    text-align: right;
-    font-family: monospace;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.item-department {
+    font-size: 13px;
+    color: #666;
+    line-height: 1.1;
 }
 
 /* Кнопка успеха */
@@ -836,17 +825,14 @@
         margin: 10px;
     }
     
-    .selection-item-details {
-        grid-template-columns: 1fr;
-    }
-    
-    .detail-row {
+    .selection-item-content {
         flex-direction: column;
-        gap: 2px;
+        align-items: flex-start;
+        gap: 8px;
     }
     
-    .detail-value {
-        text-align: left;
+    .inventory-type-badge {
+        align-self: flex-start;
     }
 }
 
