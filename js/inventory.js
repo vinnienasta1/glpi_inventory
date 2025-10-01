@@ -420,6 +420,12 @@ loadColumnsConfig();
                         <button class="inventory-action-btn inventory-btn-warning" onclick="showBulkEditModal()">
                             <i class="fas fa-edit"></i> Изменить
                         </button>
+                        <button class="inventory-action-btn inventory-btn-success" onclick="showExportModal()">
+                            <i class="fas fa-file-export"></i> Экспорт
+                        </button>
+                        <button class="inventory-action-btn inventory-btn-primary" onclick="showImportModal()">
+                            <i class="fas fa-file-import"></i> Импорт
+                        </button>
                         <button class="inventory-action-btn inventory-btn-info" onclick="showColumnsModal()">
                             <i class="fas fa-columns"></i> Столбцы
                         </button>
