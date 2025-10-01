@@ -154,6 +154,12 @@ loadColumnsConfig();
         const originalTerm = searchTerm;
         searchTerm = searchTerm.replace(/^0+/, '') || '0';
         
+        // Проверяем, не остался ли только "0" после удаления ведущих нулей
+        if (searchTerm === '0') {
+            showNotification('Некорректный номер', 'error');
+            return;
+        }
+        
         // Если убрали ведущие нули, показываем уведомление
         if (originalTerm !== searchTerm && originalTerm.startsWith('0')) {
             showNotification(`Поиск по номеру: ${searchTerm} (убраны ведущие нули)`, 'info');
