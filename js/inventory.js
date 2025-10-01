@@ -959,7 +959,7 @@ loadColumnsConfig();
 // ============================================
 
 // Показать главное модальное окно импорта/экспорта
-function showImportExportModal() {
+window.showImportExportModal = function() {
     const hasData = itemsBuffer.length > 0;
     
     const modal = document.createElement('div');
@@ -1037,7 +1037,7 @@ function showImportExportModal() {
 }
 
 // Закрыть главное модальное окно
-function closeImportExportModal() {
+window.closeImportExportModal = function() {
     if (window.currentImportExportModal) {
         window.currentImportExportModal.remove();
         window.currentImportExportModal = null;
@@ -1045,7 +1045,7 @@ function closeImportExportModal() {
 }
 
 // Переключение вкладок
-function switchImportExportTab(tab) {
+window.switchImportExportTab = function(tab) {
     // Убираем активный класс со всех вкладок
     document.querySelectorAll('.import-export-tab').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.import-export-content').forEach(c => c.classList.remove('active'));
@@ -1074,7 +1074,7 @@ function updateExportButtonsState() {
 }
 
 // Экспорт в CSV
-function exportToCSV() {
+window.exportToCSV = function() {
     if (itemsBuffer.length === 0) {
         showNotification('Буфер пуст. Нечего экспортировать.', 'warning');
         return;
@@ -1084,7 +1084,7 @@ function exportToCSV() {
 }
 
 // Экспорт в Excel
-function exportToExcel() {
+window.exportToExcel = function() {
     if (itemsBuffer.length === 0) {
         showNotification('Буфер пуст. Нечего экспортировать.', 'warning');
         return;
@@ -1252,7 +1252,7 @@ function getCellValueForExport(item, columnKey) {
 }
 
 // Экспорт в CSV файл
-function exportToCSVFile(data, columns) {
+window.exportToCSV = functionFile(data, columns) {
     const headers = columns.map(col => col.name);
     const csvContent = [
         headers.join(','),
@@ -1273,7 +1273,7 @@ function exportToCSVFile(data, columns) {
 }
 
 // Экспорт в Excel файл (используем CSV с BOM для корректного отображения в Excel)
-function exportToExcelFile(data, columns) {
+window.exportToExcel = functionFile(data, columns) {
     const headers = columns.map(col => col.name);
     const csvContent = [
         headers.join('\t'),
@@ -1460,7 +1460,7 @@ function showImportModal() {
 }
 
 // Показать модальное окно импорта из буфера обмена
-function showClipboardImportModal() {
+window.showClipboardImportModal = function() {
     const modal = document.createElement('div');
     modal.className = 'inventory-modal-overlay';
     modal.innerHTML = `
@@ -1572,7 +1572,7 @@ function handleFileSelect(e) {
 }
 
 // Обработка файла импорта
-function processImportFile(file) {
+window.processImportFile = function(file) {
     const allowedTypes = [
         'text/plain',
         'text/csv',
