@@ -106,14 +106,14 @@ function getCellValue(item, columnKey) {
             return escapeHtml(truncateText(item.comment || '-', 30));
         case 'actions':
             if (item.isNotFound) {
-                return `<button class="inventory-delete-btn" onclick="removeBufferItem(${item.index})">
+                return `<button class="inventory-delete-btn" onclick="removeFromBuffer(${item.index})">
                     <i class="fas fa-trash"></i> Удалить
                 </button>`;
             }
             return `<a href="${item.url}" target="_blank" class="inventory-open-link">
                 <i class="fas fa-external-link-alt"></i>
             </a>
-            <button class="inventory-delete-btn" onclick="removeBufferItem(${item.index})">
+            <button class="inventory-delete-btn" onclick="removeFromBuffer(${item.index})">
                 <i class="fas fa-trash"></i>
             </button>`;
         default:
