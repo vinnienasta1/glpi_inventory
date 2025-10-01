@@ -146,7 +146,7 @@ loadColumnsConfig();
         let searchTerm = searchInput.value.trim();
         
         if (!searchTerm) {
-            showError('Введите инвентарный номер для поиска');
+            showNotification('Введите инвентарный номер для поиска', 'error');
             return;
         }
         
@@ -194,17 +194,17 @@ loadColumnsConfig();
         })
         .then(data => {
             if (data.error) {
-                showError(data.error);
+                showNotification(data.error, 'error');
             } else if (data.success) {
                 addToBuffer(data, searchTerm);
             } else {
-                showError('Неизвестная ошибка при поиске');
+                showNotification('Неизвестная ошибка при поиске', 'error');
             }
         })
         .catch(error => {
             console.error('Ошибка:', error);
-            // Добавляем "не найдено" в буфер при ошибке соединения  
-            addNotFoundToBuffer(searchTerm);
+            // Показываем уведомление об ошибке соединения
+            showNotification('Ошибка соединения с сервером', 'error');
         })
         .finally(() => {
             // Включаем кнопку поиска
@@ -377,31 +377,6 @@ loadColumnsConfig();
         `;
     }
     
-    // Показать ошибку
-    function showError(message) {
-        const errorHtml = `
-            <div class="inventory-error">
-                <strong>Ошибка:</strong> ${escapeHtml(message)}
-            </div>
-        `;
-        
-        // Добавляем ошибку в начало контейнера, сохраняя буфер
-        const existingContent = resultsContainer.innerHTML;
-        if (existingContent.includes('inventory-buffer-container')) {
-            // Вставляем ошибку перед буфером
-            resultsContainer.innerHTML = errorHtml + existingContent;
-        } else {
-            resultsContainer.innerHTML = errorHtml;
-        }
-        
-        // Автоматически скрываем ошибку через 5 секунд
-        setTimeout(() => {
-            const errorElement = resultsContainer.querySelector('.inventory-error');
-            if (errorElement) {
-                errorElement.remove();
-            }
-        }, 5000);
-    }
     
     // Рендеринг буфера
     function renderBuffer() {
