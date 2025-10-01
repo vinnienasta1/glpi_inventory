@@ -1202,7 +1202,7 @@ window.performExport = function(type) {
 }
 
 // Получить значение ячейки для экспорта (без HTML)
-window.getCellValue = functionForExport(item, columnKey) {
+window.getCellValue = function(item, columnKey) {
     switch(columnKey) {
         case 'search_term':
             return item.search_term || '';
