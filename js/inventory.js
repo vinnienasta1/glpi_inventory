@@ -467,6 +467,9 @@ loadColumnsConfig();
         `;
         
         resultsContainer.innerHTML = html;
+        
+        // Обновляем состояние кнопок экспорта
+        updateExportButtonsState();
     }
 
     
@@ -955,3 +958,841 @@ loadColumnsConfig();
     // Фокус на поле ввода при загрузке страницы
     searchInput.focus();
 });
+
+// ============================================
+// СИСТЕМА ЭКСПОРТА ДАННЫХ
+// ============================================
+
+// Обновление состояния кнопок экспорта
+function updateExportButtonsState() {
+    const hasData = itemsBuffer.length > 0;
+    const exportButtons = ['export-csv-btn', 'export-excel-btn', 'generate-report-btn'];
+    
+    exportButtons.forEach(btnId => {
+        const btn = document.getElementById(btnId);
+        if (btn) {
+            btn.disabled = !hasData;
+        }
+    });
+}
+
+// Экспорт в CSV
+function exportToCSV() {
+    if (itemsBuffer.length === 0) {
+        showNotification('Буфер пуст. Нечего экспортировать.', 'warning');
+        return;
+    }
+    
+    showExportModal('csv');
+}
+
+// Экспорт в Excel
+function exportToExcel() {
+    if (itemsBuffer.length === 0) {
+        showNotification('Буфер пуст. Нечего экспортировать.', 'warning');
+        return;
+    }
+    
+    showExportModal('excel');
+}
+
+// Генерация отчета для печати
+function generateReport() {
+    if (itemsBuffer.length === 0) {
+        showNotification('Буфер пуст. Нечего экспортировать.', 'warning');
+        return;
+    }
+    
+    showExportModal('report');
+}
+
+// Показать модальное окно экспорта
+function showExportModal(type) {
+    const typeNames = {
+        'csv': 'CSV файл',
+        'excel': 'Excel файл',
+        'report': 'отчет для печати'
+    };
+    
+    const visibleColumns = getVisibleColumns();
+    
+    const modal = document.createElement('div');
+    modal.className = 'inventory-modal-overlay';
+    modal.innerHTML = `
+        <div class="inventory-modal export-modal">
+            <div class="inventory-modal-header">
+                <h3>Экспорт в ${typeNames[type]}</h3>
+                <button class="inventory-modal-close" onclick="closeExportModal()">&times;</button>
+            </div>
+            <div class="inventory-modal-body">
+                <div class="export-settings">
+                    <h4>Выберите столбцы для экспорта:</h4>
+                    <div class="export-columns-list">
+                        ${visibleColumns.map(col => `
+                            <div class="export-column-item">
+                                <input type="checkbox" id="export-col-${col.key}" class="export-column-checkbox" checked>
+                                <label for="export-col-${col.key}">${col.name}</label>
+                            </div>
+                        `).join('')}
+                    </div>
+                    
+                    <div style="margin-top: 20px;">
+                        <label>
+                            <input type="checkbox" id="export-include-notfound" checked>
+                            Включать позиции "Не найдено"
+                        </label>
+                    </div>
+                    
+                    <div style="margin-top: 10px;">
+                        <label>
+                            <input type="checkbox" id="export-include-duplicates" checked>
+                            Включать дубликаты
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="inventory-modal-footer">
+                <button class="inventory-action-btn inventory-btn-secondary" onclick="closeExportModal()">
+                    Отмена
+                </button>
+                <button class="inventory-action-btn inventory-btn-primary" onclick="performExport('${type}')">
+                    <i class="fas fa-download"></i> Экспортировать
+                </button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    window.currentExportModal = modal;
+}
+
+// Закрыть модальное окно экспорта
+function closeExportModal() {
+    if (window.currentExportModal) {
+        window.currentExportModal.remove();
+        window.currentExportModal = null;
+    }
+}
+
+// Выполнить экспорт
+function performExport(type) {
+    const selectedColumns = [];
+    const checkboxes = document.querySelectorAll('.export-column-checkbox:checked');
+    checkboxes.forEach(cb => {
+        const key = cb.id.replace('export-col-', '');
+        const column = Object.values(columnsConfig).find(col => col.key === key);
+        if (column) {
+            selectedColumns.push(column);
+        }
+    });
+    
+    const includeNotFound = document.getElementById('export-include-notfound').checked;
+    const includeDuplicates = document.getElementById('export-include-duplicates').checked;
+    
+    // Фильтруем данные
+    let dataToExport = itemsBuffer.filter(item => {
+        if (!includeNotFound && item.not_found) return false;
+        if (!includeDuplicates && item.is_duplicate) return false;
+        return true;
+    });
+    
+    if (dataToExport.length === 0) {
+        showNotification('Нет данных для экспорта с выбранными настройками', 'warning');
+        return;
+    }
+    
+    // Сортируем столбцы по порядку
+    selectedColumns.sort((a, b) => a.order - b.order);
+    
+    switch (type) {
+        case 'csv':
+            exportToCSVFile(dataToExport, selectedColumns);
+            break;
+        case 'excel':
+            exportToExcelFile(dataToExport, selectedColumns);
+            break;
+        case 'report':
+            generatePrintReport(dataToExport, selectedColumns);
+            break;
+    }
+    
+    closeExportModal();
+}
+
+// Экспорт в CSV файл
+function exportToCSVFile(data, columns) {
+    const headers = columns.map(col => col.name);
+    const csvContent = [
+        headers.join(','),
+        ...data.map(item => 
+            columns.map(col => {
+                let value = getCellValue(item, col.key) || '';
+                // Экранируем кавычки и переносы строк
+                if (value.includes(',') || value.includes('"') || value.includes('\n')) {
+                    value = '"' + value.replace(/"/g, '""') + '"';
+                }
+                return value;
+            }).join(',')
+        )
+    ].join('\n');
+    
+    downloadFile(csvContent, 'inventory_export.csv', 'text/csv;charset=utf-8;');
+    showNotification(`Экспортировано ${data.length} позиций в CSV файл`, 'success');
+}
+
+// Экспорт в Excel файл (используем CSV с BOM для корректного отображения в Excel)
+function exportToExcelFile(data, columns) {
+    const headers = columns.map(col => col.name);
+    const csvContent = [
+        headers.join('\t'),
+        ...data.map(item => 
+            columns.map(col => {
+                let value = getCellValue(item, col.key) || '';
+                // Для Excel используем табуляцию как разделитель
+                return value.replace(/\t/g, ' ').replace(/\n/g, ' ');
+            }).join('\t')
+        )
+    ].join('\n');
+    
+    // Добавляем BOM для корректного отображения кириллицы в Excel
+    const bom = '\uFEFF';
+    downloadFile(bom + csvContent, 'inventory_export.xls', 'application/vnd.ms-excel;charset=utf-8;');
+    showNotification(`Экспортировано ${data.length} позиций в Excel файл`, 'success');
+}
+
+// Генерация отчета для печати
+function generatePrintReport(data, columns) {
+    const reportWindow = window.open('', '_blank');
+    const currentDate = new Date().toLocaleDateString('ru-RU');
+    
+    const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <title>Отчет по инвентаризации</title>
+            <style>
+                body { font-family: Arial, sans-serif; margin: 20px; }
+                .header { text-align: center; margin-bottom: 30px; }
+                .header h1 { margin: 0; color: #333; }
+                .header p { margin: 5px 0; color: #666; }
+                .stats { margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 5px; }
+                .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+                .stat-item { text-align: center; }
+                .stat-value { font-size: 24px; font-weight: bold; color: #0d6efd; }
+                .stat-label { font-size: 14px; color: #666; }
+                table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                th { background-color: #f8f9fa; font-weight: bold; }
+                .not-found { background-color: #f8f9fa; color: #6c757d; }
+                .duplicate { background-color: #fff3cd; }
+                @media print {
+                    body { margin: 0; }
+                    .no-print { display: none; }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>Отчет по инвентаризации</h1>
+                <p>Дата формирования: ${currentDate}</p>
+                <p>Всего позиций: ${data.length}</p>
+            </div>
+            
+            <div class="stats">
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-value">${data.filter(item => !item.not_found).length}</div>
+                        <div class="stat-label">Найдено</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">${data.filter(item => item.not_found).length}</div>
+                        <div class="stat-label">Не найдено</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">${data.filter(item => item.is_duplicate).length}</div>
+                        <div class="stat-label">Дубликаты</div>
+                    </div>
+                </div>
+            </div>
+            
+            <table>
+                <thead>
+                    <tr>
+                        ${columns.map(col => `<th>${col.name}</th>`).join('')}
+                    </tr>
+                </thead>
+                <tbody>
+                    ${data.map(item => `
+                        <tr class="${item.not_found ? 'not-found' : ''} ${item.is_duplicate ? 'duplicate' : ''}">
+                            ${columns.map(col => `<td>${getCellValue(item, col.key) || ''}</td>`).join('')}
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+            
+            <div class="no-print" style="margin-top: 30px; text-align: center;">
+                <button onclick="window.print()" style="padding: 10px 20px; font-size: 16px; background: #0d6efd; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    Печать
+                </button>
+                <button onclick="window.close()" style="padding: 10px 20px; font-size: 16px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">
+                    Закрыть
+                </button>
+            </div>
+        </body>
+        </html>
+    `;
+    
+    reportWindow.document.write(html);
+    reportWindow.document.close();
+    
+    showNotification(`Сформирован отчет для печати с ${data.length} позициями`, 'success');
+}
+
+// Вспомогательная функция для скачивания файла
+function downloadFile(content, filename, mimeType) {
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+
+// ============================================
+// СИСТЕМА ИМПОРТА ДАННЫХ
+// ============================================
+
+// Показать модальное окно импорта из файла
+function showImportModal() {
+    const modal = document.createElement('div');
+    modal.className = 'inventory-modal-overlay';
+    modal.innerHTML = `
+        <div class="inventory-modal import-modal">
+            <div class="inventory-modal-header">
+                <h3>Импорт инвентарных номеров из файла</h3>
+                <button class="inventory-modal-close" onclick="closeImportModal()">&times;</button>
+            </div>
+            <div class="inventory-modal-body">
+                <div class="import-file-area" id="import-file-area">
+                    <div>
+                        <i class="fas fa-cloud-upload-alt" style="font-size: 48px; color: #6c757d; margin-bottom: 15px;"></i>
+                        <p style="margin: 0 0 15px 0; font-size: 16px; color: #495057;">
+                            Перетащите файл сюда или нажмите для выбора
+                        </p>
+                        <label for="import-file-input" class="import-file-label">
+                            <i class="fas fa-folder-open"></i> Выбрать файл
+                        </label>
+                        <input type="file" id="import-file-input" class="import-file-input" accept=".txt,.csv,.xlsx,.xls">
+                        <div class="import-file-info">
+                            Поддерживаемые форматы: TXT, CSV, Excel (.xlsx, .xls)<br>
+                            Каждый номер должен быть на отдельной строке
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="import-progress" id="import-progress">
+                    <div class="import-progress-bar">
+                        <div class="import-progress-fill" id="import-progress-fill"></div>
+                    </div>
+                    <div class="import-progress-text" id="import-progress-text">Подготовка...</div>
+                </div>
+                
+                <div class="import-queue-info" id="import-queue-info">
+                    <h4>Очередь импорта:</h4>
+                    <div class="import-queue-list" id="import-queue-list"></div>
+                </div>
+            </div>
+            <div class="inventory-modal-footer">
+                <button class="inventory-action-btn inventory-btn-secondary" onclick="closeImportModal()">
+                    Отмена
+                </button>
+                <button class="inventory-action-btn inventory-btn-primary" onclick="startImport()" disabled id="start-import-btn">
+                    <i class="fas fa-play"></i> Начать импорт
+                </button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    window.currentImportModal = modal;
+    
+    // Настраиваем drag & drop
+    setupFileDragDrop();
+    
+    // Настраиваем выбор файла
+    document.getElementById('import-file-input').addEventListener('change', handleFileSelect);
+}
+
+// Показать модальное окно импорта из буфера обмена
+function showClipboardImportModal() {
+    const modal = document.createElement('div');
+    modal.className = 'inventory-modal-overlay';
+    modal.innerHTML = `
+        <div class="inventory-modal import-modal">
+            <div class="inventory-modal-header">
+                <h3>Импорт из буфера обмена</h3>
+                <button class="inventory-modal-close" onclick="closeImportModal()">&times;</button>
+            </div>
+            <div class="inventory-modal-body">
+                <div class="clipboard-import-area">
+                    <p style="margin-bottom: 15px; color: #495057;">
+                        Вставьте инвентарные номера (каждый на отдельной строке):
+                    </p>
+                    <textarea 
+                        id="clipboard-import-textarea" 
+                        class="clipboard-import-textarea"
+                        placeholder="Пример:&#10;123456&#10;789012&#10;345678"
+                    ></textarea>
+                    <div style="margin-top: 10px; font-size: 14px; color: #6c757d;">
+                        Поддерживаются различные разделители: новая строка, запятая, точка с запятой, пробел
+                    </div>
+                </div>
+                
+                <div class="import-progress" id="clipboard-import-progress">
+                    <div class="import-progress-bar">
+                        <div class="import-progress-fill" id="clipboard-import-progress-fill"></div>
+                    </div>
+                    <div class="import-progress-text" id="clipboard-import-progress-text">Подготовка...</div>
+                </div>
+                
+                <div class="import-queue-info" id="clipboard-import-queue-info">
+                    <h4>Очередь импорта:</h4>
+                    <div class="import-queue-list" id="clipboard-import-queue-list"></div>
+                </div>
+            </div>
+            <div class="inventory-modal-footer">
+                <button class="inventory-action-btn inventory-btn-secondary" onclick="closeImportModal()">
+                    Отмена
+                </button>
+                <button class="inventory-action-btn inventory-btn-primary" onclick="startClipboardImport()">
+                    <i class="fas fa-play"></i> Начать импорт
+                </button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    window.currentImportModal = modal;
+    
+    // Фокус на textarea
+    setTimeout(() => {
+        document.getElementById('clipboard-import-textarea').focus();
+    }, 100);
+}
+
+// Закрыть модальное окно импорта
+function closeImportModal() {
+    if (window.currentImportModal) {
+        window.currentImportModal.remove();
+        window.currentImportModal = null;
+    }
+    
+    // Останавливаем импорт если он идет
+    if (window.importQueue) {
+        window.importQueue.stopped = true;
+    }
+}
+
+// Настройка drag & drop для файлов
+function setupFileDragDrop() {
+    const dropArea = document.getElementById('import-file-area');
+    
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropArea.addEventListener(eventName, preventDefaults, false);
+    });
+    
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+    
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropArea.addEventListener(eventName, () => dropArea.classList.add('dragover'), false);
+    });
+    
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropArea.addEventListener(eventName, () => dropArea.classList.remove('dragover'), false);
+    });
+    
+    dropArea.addEventListener('drop', handleDrop, false);
+}
+
+// Обработка drop файла
+function handleDrop(e) {
+    const dt = e.dataTransfer;
+    const files = dt.files;
+    
+    if (files.length > 0) {
+        processImportFile(files[0]);
+    }
+}
+
+// Обработка выбора файла
+function handleFileSelect(e) {
+    const files = e.target.files;
+    if (files.length > 0) {
+        processImportFile(files[0]);
+    }
+}
+
+// Обработка файла импорта
+function processImportFile(file) {
+    const allowedTypes = [
+        'text/plain',
+        'text/csv',
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    ];
+    
+    if (!allowedTypes.includes(file.type) && !file.name.match(/\.(txt|csv|xlsx|xls)$/i)) {
+        showNotification('Неподдерживаемый формат файла. Используйте TXT, CSV или Excel файлы.', 'error');
+        return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const content = e.target.result;
+        const numbers = parseImportContent(content, file.name);
+        
+        if (numbers.length === 0) {
+            showNotification('В файле не найдено инвентарных номеров', 'warning');
+            return;
+        }
+        
+        setupImportQueue(numbers);
+        showNotification(`Загружено ${numbers.length} номеров из файла`, 'success');
+    };
+    
+    reader.onerror = function() {
+        showNotification('Ошибка чтения файла', 'error');
+    };
+    
+    reader.readAsText(file);
+}
+
+// Парсинг содержимого файла
+function parseImportContent(content, filename) {
+    let numbers = [];
+    
+    // Определяем разделители
+    const separators = ['\n', '\r\n', ',', ';', '\t'];
+    
+    // Пробуем разные разделители
+    for (const sep of separators) {
+        const parts = content.split(sep);
+        if (parts.length > numbers.length) {
+            numbers = parts;
+        }
+    }
+    
+    // Очищаем и фильтруем номера
+    numbers = numbers
+        .map(num => num.trim())
+        .filter(num => num.length > 0)
+        .filter(num => /^[a-zA-Z0-9]+$/.test(num)); // Только буквы и цифры
+    
+    // Убираем дубликаты
+    numbers = [...new Set(numbers)];
+    
+    return numbers;
+}
+
+// Настройка очереди импорта
+function setupImportQueue(numbers) {
+    window.importQueue = {
+        numbers: numbers,
+        current: 0,
+        total: numbers.length,
+        results: [],
+        multipleResults: [],
+        stopped: false
+    };
+    
+    // Показываем информацию об очереди
+    const queueInfo = document.getElementById('import-queue-info');
+    const queueList = document.getElementById('import-queue-list');
+    
+    queueInfo.style.display = 'block';
+    queueList.innerHTML = numbers.slice(0, 10).join('<br>') + 
+        (numbers.length > 10 ? `<br>... и еще ${numbers.length - 10} номеров` : '');
+    
+    // Активируем кнопку импорта
+    document.getElementById('start-import-btn').disabled = false;
+}
+
+// Начать импорт из файла
+function startImport() {
+    if (!window.importQueue) {
+        showNotification('Сначала загрузите файл', 'warning');
+        return;
+    }
+    
+    // Показываем прогресс
+    document.getElementById('import-progress').style.display = 'block';
+    document.getElementById('start-import-btn').disabled = true;
+    
+    // Запускаем импорт
+    processImportQueue();
+}
+
+// Начать импорт из буфера обмена
+function startClipboardImport() {
+    const textarea = document.getElementById('clipboard-import-textarea');
+    const content = textarea.value.trim();
+    
+    if (!content) {
+        showNotification('Введите инвентарные номера', 'warning');
+        return;
+    }
+    
+    const numbers = parseImportContent(content, 'clipboard');
+    
+    if (numbers.length === 0) {
+        showNotification('Не найдено корректных инвентарных номеров', 'warning');
+        return;
+    }
+    
+    // Настраиваем очередь для буфера обмена
+    window.importQueue = {
+        numbers: numbers,
+        current: 0,
+        total: numbers.length,
+        results: [],
+        multipleResults: [],
+        stopped: false,
+        isClipboard: true
+    };
+    
+    // Показываем информацию об очереди
+    const queueInfo = document.getElementById('clipboard-import-queue-info');
+    const queueList = document.getElementById('clipboard-import-queue-list');
+    
+    queueInfo.style.display = 'block';
+    queueList.innerHTML = numbers.slice(0, 10).join('<br>') + 
+        (numbers.length > 10 ? `<br>... и еще ${numbers.length - 10} номеров` : '');
+    
+    // Показываем прогресс
+    document.getElementById('clipboard-import-progress').style.display = 'block';
+    
+    // Запускаем импорт
+    processImportQueue();
+}
+
+// Обработка очереди импорта
+async function processImportQueue() {
+    const queue = window.importQueue;
+    if (!queue || queue.stopped) return;
+    
+    const progressPrefix = queue.isClipboard ? 'clipboard-import-' : 'import-';
+    const progressFill = document.getElementById(progressPrefix + 'progress-fill');
+    const progressText = document.getElementById(progressPrefix + 'progress-text');
+    
+    while (queue.current < queue.total && !queue.stopped) {
+        const number = queue.numbers[queue.current];
+        const progress = ((queue.current + 1) / queue.total) * 100;
+        
+        // Обновляем прогресс
+        progressFill.style.width = progress + '%';
+        progressText.textContent = `Обработка ${queue.current + 1} из ${queue.total}: ${number}`;
+        
+        try {
+            // Выполняем поиск
+            const result = await searchNumber(number);
+            
+            if (result.items && result.items.length > 1) {
+                // Множественные результаты - добавляем в очередь для выбора
+                queue.multipleResults.push({
+                    number: number,
+                    items: result.items
+                });
+            } else if (result.items && result.items.length === 1) {
+                // Один результат - добавляем сразу
+                addItemToBuffer(result.items[0], number);
+            } else {
+                // Не найдено
+                addNotFoundToBuffer(number);
+            }
+            
+            queue.results.push(result);
+            
+        } catch (error) {
+            console.error('Ошибка при поиске номера', number, error);
+            addNotFoundToBuffer(number);
+        }
+        
+        queue.current++;
+        
+        // Небольшая задержка чтобы не перегружать сервер
+        await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    
+    // Завершение импорта
+    if (!queue.stopped) {
+        progressText.textContent = `Импорт завершен. Обработано ${queue.total} номеров.`;
+        
+        // Обновляем буфер
+        renderBuffer();
+        
+        // Обрабатываем множественные результаты
+        if (queue.multipleResults.length > 0) {
+            showNotification(`Импорт завершен. Найдено ${queue.multipleResults.length} номеров с множественными результатами.`, 'info');
+            processMultipleResults(queue.multipleResults);
+        } else {
+            showNotification(`Импорт завершен. Добавлено ${queue.results.length} позиций.`, 'success');
+            setTimeout(() => closeImportModal(), 2000);
+        }
+    }
+}
+
+// Поиск номера (возвращает Promise)
+function searchNumber(searchTerm) {
+    return new Promise((resolve, reject) => {
+        // Убираем ведущие нули
+        const originalTerm = searchTerm;
+        searchTerm = searchTerm.replace(/^0+/, '') || '0';
+        
+        // Проверяем на некорректный номер
+        if (searchTerm === '0') {
+            resolve({ items: [] });
+            return;
+        }
+        
+        const formData = new FormData();
+        formData.append('search_serial', searchTerm);
+        
+        if (typeof GLPI_CSRF_TOKEN !== 'undefined') {
+            formData.append('_glpi_csrf_token', GLPI_CSRF_TOKEN);
+        }
+        
+        fetch(window.location.origin + '/plugins/inventory/ajax/search.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.error) {
+                reject(new Error(data.error));
+            } else if (data.success) {
+                resolve(data);
+            } else {
+                reject(new Error('Неизвестная ошибка при поиске'));
+            }
+        })
+        .catch(error => {
+            reject(error);
+        });
+    });
+}
+
+// Обработка множественных результатов
+function processMultipleResults(multipleResults) {
+    if (multipleResults.length === 0) return;
+    
+    const currentResult = multipleResults.shift();
+    
+    // Показываем модальное окно выбора для текущего номера
+    showImportSelectionModal(currentResult.number, currentResult.items, () => {
+        // После выбора переходим к следующему
+        processMultipleResults(multipleResults);
+    });
+}
+
+// Модальное окно выбора для импорта
+function showImportSelectionModal(searchTerm, items, onComplete) {
+    // Закрываем модальное окно импорта
+    closeImportModal();
+    
+    const modal = document.createElement('div');
+    modal.className = 'inventory-modal-overlay';
+    modal.innerHTML = `
+        <div class="inventory-modal selection-modal">
+            <div class="inventory-modal-header">
+                <h3>Найдено несколько позиций для "${searchTerm}" (${items.length})</h3>
+                <button class="inventory-modal-close" onclick="closeImportSelectionModal()">&times;</button>
+            </div>
+            <div class="inventory-modal-body">
+                <p>Выберите нужную позицию для добавления в буфер:</p>
+                <div class="selection-items-list">
+                    ${items.map((item, index) => `
+                        <div class="selection-item" onclick="selectImportItem(${index})">
+                            <div class="selection-item-content">
+                                <span class="inventory-type-badge inventory-type-${item.type_class}">
+                                    ${escapeHtml(item.type)}
+                                </span>
+                                <div class="selection-item-info">
+                                    <strong class="item-name">${escapeHtml(item.name)}</strong>
+                                    <span class="item-department">${escapeHtml(item.group_name || 'Не указан')}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            <div class="inventory-modal-footer">
+                <button class="inventory-action-btn inventory-btn-secondary" onclick="skipImportItem()">
+                    Пропустить
+                </button>
+                <button class="inventory-action-btn inventory-btn-success" onclick="addAllImportItems()">
+                    <i class="fas fa-plus"></i> Добавить все
+                </button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    window.currentImportSelectionModal = modal;
+    window.currentImportSelection = {
+        searchTerm: searchTerm,
+        items: items,
+        onComplete: onComplete
+    };
+}
+
+// Выбрать элемент при импорте
+function selectImportItem(index) {
+    const selection = window.currentImportSelection;
+    if (selection && selection.items[index]) {
+        addItemToBuffer(selection.items[index], selection.searchTerm);
+        renderBuffer();
+        closeImportSelectionModal();
+        if (selection.onComplete) selection.onComplete();
+    }
+}
+
+// Добавить все элементы при импорте
+function addAllImportItems() {
+    const selection = window.currentImportSelection;
+    if (selection && selection.items) {
+        selection.items.forEach(item => {
+            addItemToBuffer(item, selection.searchTerm);
+        });
+        renderBuffer();
+        closeImportSelectionModal();
+        if (selection.onComplete) selection.onComplete();
+    }
+}
+
+// Пропустить элемент при импорте
+function skipImportItem() {
+    const selection = window.currentImportSelection;
+    closeImportSelectionModal();
+    if (selection && selection.onComplete) selection.onComplete();
+}
+
+// Закрыть модальное окно выбора при импорте
+function closeImportSelectionModal() {
+    if (window.currentImportSelectionModal) {
+        window.currentImportSelectionModal.remove();
+        window.currentImportSelectionModal = null;
+        window.currentImportSelection = null;
+    }
+}

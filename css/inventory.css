@@ -836,6 +836,197 @@
     }
 }
 
+/* Панель действий экспорта/импорта */
+.inventory-actions-panel {
+    display: flex;
+    gap: 30px;
+    margin: 20px 0;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+}
+
+.inventory-actions-group {
+    flex: 1;
+}
+
+.inventory-actions-group h3 {
+    margin: 0 0 15px 0;
+    font-size: 16px;
+    color: #495057;
+    font-weight: 600;
+}
+
+.inventory-actions-group .inventory-action-btn {
+    display: block;
+    width: 100%;
+    margin-bottom: 10px;
+    text-align: left;
+}
+
+.inventory-actions-group .inventory-action-btn:last-child {
+    margin-bottom: 0;
+}
+
+.inventory-actions-group .inventory-action-btn i {
+    width: 20px;
+    text-align: center;
+    margin-right: 8px;
+}
+
+/* Модальные окна импорта */
+.import-modal {
+    max-width: 600px;
+}
+
+.import-file-area {
+    border: 2px dashed #dee2e6;
+    border-radius: 8px;
+    padding: 40px 20px;
+    text-align: center;
+    background: #f8f9fa;
+    margin: 20px 0;
+    transition: all 0.3s ease;
+}
+
+.import-file-area:hover {
+    border-color: #0d6efd;
+    background: #e7f3ff;
+}
+
+.import-file-area.dragover {
+    border-color: #0d6efd;
+    background: #e7f3ff;
+    transform: scale(1.02);
+}
+
+.import-file-input {
+    display: none;
+}
+
+.import-file-label {
+    display: inline-block;
+    padding: 12px 24px;
+    background: #0d6efd;
+    color: white;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.3s;
+}
+
+.import-file-label:hover {
+    background: #0b5ed7;
+}
+
+.import-file-info {
+    margin-top: 15px;
+    font-size: 14px;
+    color: #6c757d;
+}
+
+.clipboard-import-area {
+    margin: 20px 0;
+}
+
+.clipboard-import-textarea {
+    width: 100%;
+    min-height: 200px;
+    padding: 15px;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    font-family: monospace;
+    font-size: 14px;
+    resize: vertical;
+}
+
+.import-progress {
+    margin: 20px 0;
+    display: none;
+}
+
+.import-progress-bar {
+    width: 100%;
+    height: 20px;
+    background: #e9ecef;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.import-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #28a745, #20c997);
+    width: 0%;
+    transition: width 0.3s ease;
+}
+
+.import-progress-text {
+    text-align: center;
+    margin-top: 10px;
+    font-size: 14px;
+    color: #495057;
+}
+
+.import-queue-info {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 6px;
+    padding: 15px;
+    margin: 15px 0;
+    display: none;
+}
+
+.import-queue-info h4 {
+    margin: 0 0 10px 0;
+    color: #856404;
+}
+
+.import-queue-list {
+    max-height: 200px;
+    overflow-y: auto;
+    font-family: monospace;
+    font-size: 13px;
+}
+
+/* Экспорт настройки */
+.export-settings {
+    margin: 20px 0;
+}
+
+.export-columns-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 10px;
+    margin: 15px 0;
+}
+
+.export-column-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    background: #f8f9fa;
+    border-radius: 4px;
+}
+
+.export-column-checkbox {
+    margin: 0;
+}
+
+/* Адаптивность для панели действий */
+@media (max-width: 768px) {
+    .inventory-actions-panel {
+        flex-direction: column;
+        gap: 20px;
+    }
+    
+    .inventory-actions-group .inventory-action-btn {
+        font-size: 14px;
+        padding: 10px 15px;
+    }
+}
+
 /* Модальное окно настройки столбцов */
 .columns-modal {
     max-width: 500px;

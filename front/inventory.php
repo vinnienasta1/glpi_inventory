@@ -59,6 +59,32 @@ if ($debug_mode) {
             </div>
         </form>
         
+        <!-- Кнопки экспорта/импорта -->
+        <div class="inventory-actions-panel">
+            <div class="inventory-actions-group">
+                <h3>Импорт данных</h3>
+                <button class="inventory-action-btn inventory-btn-secondary" onclick="showImportModal()">
+                    <i class="fas fa-upload"></i> Импорт из файла
+                </button>
+                <button class="inventory-action-btn inventory-btn-secondary" onclick="showClipboardImportModal()">
+                    <i class="fas fa-clipboard"></i> Импорт из буфера обмена
+                </button>
+            </div>
+            
+            <div class="inventory-actions-group">
+                <h3>Экспорт данных</h3>
+                <button class="inventory-action-btn inventory-btn-primary" onclick="exportToCSV()" disabled id="export-csv-btn">
+                    <i class="fas fa-file-csv"></i> Экспорт в CSV
+                </button>
+                <button class="inventory-action-btn inventory-btn-primary" onclick="exportToExcel()" disabled id="export-excel-btn">
+                    <i class="fas fa-file-excel"></i> Экспорт в Excel
+                </button>
+                <button class="inventory-action-btn inventory-btn-success" onclick="generateReport()" disabled id="generate-report-btn">
+                    <i class="fas fa-print"></i> Отчет для печати
+                </button>
+            </div>
+        </div>
+        
         <div id="inventory-results"></div>
     </div>
 </div>
