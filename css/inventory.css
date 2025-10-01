@@ -843,26 +843,24 @@
 }
 
 .inventory-import-export-btn {
-    padding: 12px 24px;
-    font-size: 16px;
-    font-weight: 500;
-    background: linear-gradient(135deg, #0d6efd, #6610f2);
-    color: white;
     border: none;
-    border-radius: 8px;
+    padding: 8px 12px;
+    border-radius: 4px;
     cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    font-size: 14px;
+    transition: all 0.3s;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-weight: 500;
+    background: #17a2b8;
+    color: white;
 }
 
 .inventory-import-export-btn:hover {
-    background: linear-gradient(135deg, #0b5ed7, #520dc2);
+    background: #138496;
     transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-}
-
-.inventory-import-export-btn i {
-    margin-right: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
 
 /* Главное модальное окно импорта/экспорта */
