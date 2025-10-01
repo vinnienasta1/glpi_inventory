@@ -1110,7 +1110,7 @@ function generateReport() {
 }
 
 // Показать модальное окно экспорта
-function showExportModal(type) {
+window.showExportModal = function(type) {
     const typeNames = {
         'csv': 'CSV файл',
         'excel': 'Excel файл',
@@ -1170,7 +1170,7 @@ function showExportModal(type) {
 }
 
 // Закрыть модальное окно экспорта
-function closeExportModal() {
+window.closeExportModal = function() {
     if (window.currentExportModal) {
         window.currentExportModal.remove();
         window.currentExportModal = null;
@@ -1178,7 +1178,7 @@ function closeExportModal() {
 }
 
 // Выполнить экспорт
-function performExport(type) {
+window.performExport = function(type) {
     const selectedColumns = [];
     const checkboxes = document.querySelectorAll('.export-column-checkbox:checked');
     checkboxes.forEach(cb => {
@@ -1405,7 +1405,7 @@ function downloadFile(content, filename, mimeType) {
 // ============================================
 
 // Показать модальное окно импорта из файла
-function showImportModal() {
+window.showImportModal = function() {
     const modal = document.createElement('div');
     modal.className = 'inventory-modal-overlay';
     modal.innerHTML = `
@@ -1523,7 +1523,7 @@ window.showClipboardImportModal = function() {
 }
 
 // Закрыть модальное окно импорта
-function closeImportModal() {
+window.closeImportModal = function() {
     if (window.currentImportModal) {
         window.currentImportModal.remove();
         window.currentImportModal = null;
