@@ -425,6 +425,12 @@ loadColumnsConfig();
                         <button class="inventory-action-btn inventory-btn-warning" onclick="showBulkEditModal()">
                             <i class="fas fa-edit"></i> Изменить
                         </button>
+                        <button class="inventory-action-btn inventory-btn-success" onclick="showExportModal()">
+                            <i class="fas fa-download"></i> Экспорт
+                        </button>
+                        <button class="inventory-action-btn inventory-btn-primary" onclick="showImportModal()">
+                            <i class="fas fa-upload"></i> Импорт
+                        </button>
                         <button class="inventory-action-btn inventory-btn-info" onclick="showColumnsModal()">
                             <i class="fas fa-columns"></i> Столбцы
                         </button>
@@ -1109,7 +1115,7 @@ function generateReport() {
 }
 
 // Показать модальное окно экспорта
-function showExportModal(type) {
+window.showExportModal = function(type) {
     const typeNames = {
         'csv': 'CSV файл',
         'excel': 'Excel файл',
@@ -1169,7 +1175,7 @@ function showExportModal(type) {
 }
 
 // Закрыть модальное окно экспорта
-function closeExportModal() {
+window.closeExportModal = function() {
     if (window.currentExportModal) {
         window.currentExportModal.remove();
         window.currentExportModal = null;
@@ -1177,7 +1183,7 @@ function closeExportModal() {
 }
 
 // Выполнить экспорт
-function performExport(type) {
+window.performExport = function(type) {
     const selectedColumns = [];
     const checkboxes = document.querySelectorAll('.export-column-checkbox:checked');
     checkboxes.forEach(cb => {
@@ -1404,7 +1410,7 @@ function downloadFile(content, filename, mimeType) {
 // ============================================
 
 // Показать модальное окно импорта из файла
-function showImportModal() {
+window.showImportModal = function() {
     const modal = document.createElement('div');
     modal.className = 'inventory-modal-overlay';
     modal.innerHTML = `
@@ -1522,7 +1528,7 @@ function showClipboardImportModal() {
 }
 
 // Закрыть модальное окно импорта
-function closeImportModal() {
+window.closeImportModal = function() {
     if (window.currentImportModal) {
         window.currentImportModal.remove();
         window.currentImportModal = null;
