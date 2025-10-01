@@ -1,0 +1,72 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-01-01 12:00+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "Inventory"
+msgstr "Inventory"
+
+msgid "Search by inventory number"
+msgstr "Search by inventory number"
+
+msgid "Inventory number"
+msgstr "Inventory number"
+
+msgid "Search"
+msgstr "Search"
+
+msgid "Results"
+msgstr "Results"
+
+msgid "Not found"
+msgstr "Not found"
+
+msgid "Type"
+msgstr "Type"
+
+msgid "Name"
+msgstr "Name"
+
+msgid "Serial number"
+msgstr "Serial number"
+
+msgid "Department"
+msgstr "Department"
+
+msgid "Status"
+msgstr "Status"
+
+msgid "Location"
+msgstr "Location"
+
+msgid "User"
+msgstr "User"
+
+msgid "Actions"
+msgstr "Actions"
+
+msgid "Open"
+msgstr "Open"
+
+msgid "Computer"
+msgstr "Computer"
+
+msgid "Monitor"
+msgstr "Monitor"
+
+msgid "Peripheral"
+msgstr "Peripheral"

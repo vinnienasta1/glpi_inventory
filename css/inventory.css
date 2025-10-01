@@ -1,0 +1,1001 @@
+/* Стили для плагина Inventory */
+
+.inventory-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.inventory-search-box {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 25px;
+    margin-bottom: 30px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.inventory-search-input {
+    width: 100%;
+    max-width: 400px;
+    padding: 12px 16px;
+    border: 2px solid #ddd;
+    border-radius: 6px;
+    font-size: 16px;
+    transition: border-color 0.3s;
+}
+
+.inventory-search-input:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0,123,255,0.25);
+}
+
+.inventory-search-btn {
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    margin-left: 10px;
+    border-radius: 6px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.inventory-search-btn:hover {
+    background: #0056b3;
+}
+
+.inventory-search-btn:disabled {
+    background: #6c757d;
+    cursor: not-allowed;
+}
+
+.inventory-results {
+    margin-bottom: 20px;
+}
+
+.inventory-loading {
+    text-align: center;
+    padding: 40px;
+    color: #6c757d;
+    font-size: 18px;
+}
+
+.inventory-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #007bff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-right: 10px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.inventory-no-results {
+    text-align: center;
+    padding: 40px;
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 8px;
+    color: #856404;
+    font-size: 16px;
+}
+
+.inventory-results-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.inventory-results-table th {
+    background: #007bff;
+    color: white;
+    padding: 15px 12px;
+    text-align: left;
+    font-weight: 600;
+}
+
+.inventory-results-table td {
+    padding: 12px;
+    border-bottom: 1px solid #eee;
+    vertical-align: middle;
+}
+
+.inventory-results-table tr:last-child td {
+    border-bottom: none;
+}
+
+.inventory-results-table tr:hover {
+    background: #f8f9fa;
+}
+
+.inventory-type-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.inventory-type-computer {
+    background: #d4edda;
+    color: #155724;
+}
+
+.inventory-type-monitor {
+    background: #d1ecf1;
+    color: #0c5460;
+}
+
+.inventory-type-peripheral {
+    background: #ffeaa7;
+    color: #856404;
+}
+
+.inventory-open-link {
+    display: inline-block;
+    padding: 6px 12px;
+    background: #28a745;
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+    font-size: 14px;
+    transition: background-color 0.3s;
+}
+
+.inventory-open-link:hover {
+    background: #218838;
+    color: white;
+    text-decoration: none;
+}
+
+/* Ячейка действий */
+.actions-cell {
+    white-space: nowrap;
+    width: 100px;
+}
+
+.actions-cell a,
+.actions-cell button {
+    margin-right: 5px;
+}
+
+/* Кнопка удаления */
+.inventory-delete-btn {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 4px 6px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: background-color 0.3s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    height: 24px;
+}
+
+.inventory-delete-btn:hover {
+    background: #c82333;
+}
+
+.inventory-stats {
+    margin-top: 15px;
+    padding: 10px 15px;
+    background: #e7f3ff;
+    border: 1px solid #b8daff;
+    border-radius: 6px;
+    color: #004085;
+    font-size: 14px;
+}
+
+.inventory-error {
+    padding: 15px;
+    background: #f8d7da;
+    border: 1px solid #f5c6cb;
+    border-radius: 6px;
+    color: #721c24;
+    margin-bottom: 20px;
+}
+
+/* Стили для буфера */
+.inventory-buffer-container {
+    margin-bottom: 20px;
+}
+
+.inventory-buffer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding: 15px;
+    background: #f1f3f4;
+    border-radius: 8px;
+    border-left: 4px solid #007bff;
+}
+
+.inventory-buffer-header h3 {
+    margin: 0;
+    color: #333;
+    font-size: 18px;
+}
+
+.buffer-count {
+    color: #007bff;
+    font-weight: normal;
+}
+
+.actual-count {
+    color: #28a745;
+    font-weight: normal;
+}
+
+/* Группа кнопок действий */
+.inventory-buffer-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+/* Базовые стили кнопок */
+.inventory-action-btn {
+    border: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-weight: 500;
+}
+
+.inventory-action-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+/* Цветовые схемы кнопок */
+.inventory-btn-primary {
+    background: #007bff;
+    color: white;
+}
+
+.inventory-btn-primary:hover {
+    background: #0056b3;
+}
+
+.inventory-btn-warning {
+    background: #ffc107;
+    color: #212529;
+}
+
+.inventory-btn-warning:hover {
+    background: #e0a800;
+}
+
+.inventory-btn-info {
+    background: #17a2b8;
+    color: white;
+}
+
+.inventory-btn-info:hover {
+    background: #138496;
+}
+
+.inventory-btn-danger {
+    background: #dc3545;
+    color: white;
+}
+
+.inventory-btn-danger:hover {
+    background: #c82333;
+}
+
+.inventory-btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.inventory-btn-secondary:hover {
+    background: #545b62;
+}
+
+/* Стили для разных типов строк в буфере */
+.inventory-not-found-row {
+    background-color: #f8f9fa !important;
+    color: #6c757d;
+}
+
+.inventory-duplicate-row {
+    background-color: #fff3cd !important;
+    border-left: 3px solid #ffc107;
+}
+
+.inventory-not-found-row:hover {
+    background-color: #e9ecef !important;
+}
+
+.inventory-duplicate-row:hover {
+    background-color: #ffeaa7 !important;
+}
+
+/* Стили для бейджей типов */
+.inventory-type-not-found {
+    background: #6c757d;
+    color: white;
+}
+
+.inventory-type-not-found::after {
+    content: " 🔍";
+}
+
+/* Стили для ячейки поиска */
+.search-term-cell {
+    font-weight: 600;
+    color: #495057;
+    background: #f8f9fa;
+    border-radius: 3px;
+    padding: 4px 8px !important;
+    font-family: monospace;
+    max-width: 120px;
+}
+
+/* Пустой буфер */
+.inventory-no-buffer {
+    text-align: center;
+    padding: 40px;
+    color: #6c757d;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 2px dashed #dee2e6;
+}
+
+.inventory-no-buffer p {
+    margin: 0;
+    font-size: 16px;
+}
+
+/* Недоступные действия */
+.not-available {
+    color: #6c757d;
+    font-style: italic;
+}
+
+/* Маленький текст для дубликатов */
+.inventory-type-badge small {
+    font-size: 10px;
+    opacity: 0.8;
+    text-transform: lowercase;
+}
+
+/* Улучшенные ошибки */
+.inventory-error {
+    margin-bottom: 15px;
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        transform: translateY(-10px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Модальные окна */
+.inventory-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.inventory-modal {
+    background: white;
+    border-radius: 8px;
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    animation: slideIn 0.3s ease-out;
+}
+
+.inventory-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.inventory-modal-header h3 {
+    margin: 0;
+    color: #333;
+}
+
+.inventory-modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #6c757d;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.inventory-modal-close:hover {
+    color: #dc3545;
+}
+
+.inventory-modal-body {
+    padding: 20px;
+}
+
+.inventory-modal-footer {
+    padding: 20px;
+    border-top: 1px solid #dee2e6;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+/* Формы в модальных окнах */
+.inventory-form-group {
+    margin-bottom: 20px;
+}
+
+.inventory-form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+    color: #333;
+}
+
+.inventory-form-group input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+.inventory-form-group input:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+}
+
+/* Список столбцов */
+.inventory-columns-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 10px;
+}
+
+.inventory-columns-list label {
+    display: flex;
+    align-items: center;
+    padding: 8px;
+    background: #f8f9fa;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.inventory-columns-list label:hover {
+    background: #e9ecef;
+}
+
+.inventory-columns-list input[type="checkbox"] {
+    margin-right: 8px;
+}
+
+/* Стили для массового редактирования */
+.bulk-edit-modal {
+    max-width: 600px;
+}
+
+.bulk-edit-rule {
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: 15px;
+    margin-bottom: 15px;
+    background: #f8f9fa;
+}
+
+.rule-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.rule-field-select {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.rule-remove-btn {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 6px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-left: 10px;
+    font-size: 12px;
+}
+
+.rule-remove-btn:hover {
+    background: #c82333;
+}
+
+.rule-value-container {
+    margin-top: 10px;
+}
+
+.rule-value-select,
+.rule-value-input {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+.rule-value-select:focus,
+.rule-value-input:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+}
+
+.inventory-add-rule-btn {
+    background: #28a745;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: background-color 0.3s;
+    margin-bottom: 20px;
+}
+
+.inventory-add-rule-btn:hover {
+    background: #218838;
+}
+
+/* Модальное окно выбора */
+.selection-modal {
+    max-width: 600px;
+    max-height: 80vh;
+}
+
+.selection-items-list {
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    background: #f8f9fa;
+}
+
+.selection-item {
+    padding: 10px 15px;
+    border-bottom: 1px solid #dee2e6;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    background: white;
+}
+
+.selection-item:last-child {
+    border-bottom: none;
+}
+
+.selection-item:hover {
+    background: #e3f2fd;
+    transform: translateX(2px);
+}
+
+.selection-item-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.selection-item-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+}
+
+.item-name {
+    font-size: 15px;
+    color: #333;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.item-department {
+    font-size: 13px;
+    color: #666;
+    line-height: 1.1;
+}
+
+/* Кнопка успеха */
+.inventory-btn-success {
+    background: #28a745;
+    color: white;
+}
+
+.inventory-btn-success:hover {
+    background: #218838;
+}
+
+/* Уведомления */
+.inventory-notification {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 15px 20px;
+    border-radius: 6px;
+    color: white;
+    font-weight: 500;
+    z-index: 1001;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    min-width: 300px;
+    animation: slideInRight 0.3s ease-out;
+}
+
+.inventory-notification button {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 0;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.inventory-notification-success {
+    background: #28a745;
+}
+
+.inventory-notification-info {
+    background: #17a2b8;
+}
+
+.inventory-notification-warning {
+    background: #ffc107;
+    color: #212529;
+}
+
+.inventory-notification-warning button {
+    color: #212529;
+}
+
+.inventory-notification-error {
+    background: #dc3545;
+}
+
+/* Анимации */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateY(-50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .inventory-container {
+        padding: 10px;
+    }
+    
+    .inventory-search-input {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+    
+    .inventory-search-btn {
+        margin-left: 0;
+        width: 100%;
+    }
+    
+    .inventory-results-table {
+        font-size: 14px;
+    }
+    
+    .inventory-results-table th,
+    .inventory-results-table td {
+        padding: 8px 6px;
+    }
+    
+    .inventory-buffer-header {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+    }
+    
+    .inventory-buffer-actions {
+        justify-content: center;
+        width: 100%;
+    }
+    
+    .inventory-action-btn {
+        flex: 1;
+        min-width: 120px;
+        justify-content: center;
+    }
+    
+    /* Скрываем столбец поиска на мобильных */
+    .search-term-cell,
+    .inventory-results-table th:nth-child(1) {
+        display: none;
+    }
+    
+    /* Адаптивность модальных окон */
+    .inventory-modal {
+        width: 95%;
+        margin: 10px;
+    }
+    
+    .inventory-modal-footer {
+        flex-direction: column;
+    }
+    
+    .inventory-notification {
+        left: 10px;
+        right: 10px;
+        min-width: auto;
+    }
+    
+    /* Адаптивность модального окна выбора */
+    .selection-modal {
+        max-width: 95%;
+        margin: 10px;
+    }
+    
+    .selection-item-content {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+    
+    .inventory-type-badge {
+        align-self: flex-start;
+    }
+}
+
+/* Модальное окно настройки столбцов */
+.columns-modal {
+    max-width: 500px;
+    max-height: 80vh;
+}
+
+.columns-list {
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 10px;
+    background: #f8f9fa;
+}
+
+.column-item {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    margin-bottom: 8px;
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    cursor: move;
+    transition: all 0.2s;
+}
+
+.column-item:hover {
+    border-color: #0d6efd;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.column-item.dragging {
+    opacity: 0.5;
+    transform: rotate(2deg);
+}
+
+.column-drag-handle {
+    margin-right: 10px;
+    color: #6c757d;
+    font-size: 18px;
+    cursor: grab;
+}
+
+.column-drag-handle:active {
+    cursor: grabbing;
+}
+
+.column-label {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    cursor: pointer;
+    margin: 0;
+}
+
+.column-checkbox {
+    margin-right: 10px;
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.column-label span {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* Скрытые столбцы */
+.column-hidden {
+    display: none !important;
+}
+
+/* Адаптивное масштабирование таблицы */
+.inventory-buffer-container {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: visible;
+}
+
+.inventory-results-table {
+    width: auto;
+    min-width: 100%;
+    table-layout: auto;
+}
+
+.inventory-results-table th,
+.inventory-results-table td {
+    white-space: nowrap;
+    padding: 8px 10px;
+    font-size: 13px;
+}
+
+/* Оптимизация ширины столбцов */
+.inventory-results-table th:nth-child(1),
+.inventory-results-table td:nth-child(1) {
+    /* Поиск */
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.inventory-results-table th:nth-child(2),
+.inventory-results-table td:nth-child(2) {
+    /* Тип */
+    min-width: 100px;
+}
+
+.inventory-results-table th:nth-child(3),
+.inventory-results-table td:nth-child(3) {
+    /* Наименование */
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Действия - фиксированная ширина */
+.actions-cell {
+    min-width: 85px !important;
+    max-width: 85px !important;
+    text-align: center;
+}
+
+.actions-cell .inventory-open-link,
+.actions-cell .inventory-delete-btn {
+    padding: 5px 8px !important;
+    font-size: 14px !important;
+    min-width: 35px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Контейнер для скролла */
+.inventory-container {
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+/* Адаптивность для маленьких экранов */
+@media (max-width: 1400px) {
+    .inventory-results-table th,
+    .inventory-results-table td {
+        font-size: 12px;
+        padding: 6px 8px;
+    }
+    
+    .inventory-results-table th:nth-child(3),
+    .inventory-results-table td:nth-child(3) {
+        max-width: 150px;
+    }
+}
+
+@media (max-width: 1200px) {
+    .inventory-buffer-container {
+        overflow-x: scroll;
+    }
+    
+    .inventory-results-table {
+        font-size: 11px;
+    }
+}
