@@ -55,7 +55,7 @@ function saveColumnsConfig() {
 }
 
 // Получить отсортированный список видимых столбцов
-function getVisibleColumns() {
+window.getVisibleColumns = function() {
     return Object.entries(columnsConfig)
         .filter(([key, config]) => config.visible)
         .sort((a, b) => a[1].order - b[1].order)
@@ -63,14 +63,14 @@ function getVisibleColumns() {
 }
 
 // Получить отсортированный список всех столбцов
-function getAllColumns() {
+window.getAllColumns = function() {
     return Object.entries(columnsConfig)
         .sort((a, b) => a[1].order - b[1].order)
         .map(([key, config]) => ({ key, ...config }));
 }
 
 // Получить значение ячейки по ключу столбца
-function getCellValue(item, columnKey) {
+window.getCellValue = function(item, columnKey) {
     switch(columnKey) {
         case 'search_term':
             return escapeHtml(item.search_term);
@@ -1043,31 +1043,10 @@ window.showImportExportModal = function() {
 }
 
 // Закрыть главное модальное окно
-window.closeImportExportModal = function() {
-    if (window.currentImportExportModal) {
-        window.currentImportExportModal.remove();
-        window.currentImportExportModal = null;
-    }
-}
+
 
 // Переключение вкладок
-window.switchImportExportTab = function(tab) {
-    // Убираем активный класс со всех вкладок
-    document.querySelectorAll('.import-export-tab').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.import-export-content').forEach(c => c.classList.remove('active'));
-    
-    // Находим кнопку по тексту и добавляем активный класс
-    const tabs = document.querySelectorAll('.import-export-tab');
-    tabs.forEach(t => {
-        if ((tab === 'import' && t.textContent.includes('Импорт')) || 
-            (tab === 'export' && t.textContent.includes('Экспорт'))) {
-            t.classList.add('active');
-        }
-    });
-    
-    // Показываем соответствующий контент
-    document.getElementById(tab + '-content').classList.add('active');
-}
+
 
 // ============================================
 // СИСТЕМА ЭКСПОРТА ДАННЫХ
@@ -1223,7 +1202,7 @@ window.performExport = function(type) {
 }
 
 // Получить значение ячейки для экспорта (без HTML)
-function getCellValueForExport(item, columnKey) {
+window.getCellValue = functionForExport(item, columnKey) {
     switch(columnKey) {
         case 'search_term':
             return item.search_term || '';

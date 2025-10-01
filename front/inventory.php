@@ -59,12 +59,6 @@ if ($debug_mode) {
             </div>
         </form>
         
-        <!-- Кнопка импорта/экспорта -->
-        <div class="inventory-import-export-panel">
-            <button class="inventory-import-export-btn" onclick="showImportExportModal()">
-                <i class="fas fa-exchange-alt"></i> Импорт/Экспорт
-            </button>
-        </div>
         
         <div id="inventory-results"></div>
     </div>
