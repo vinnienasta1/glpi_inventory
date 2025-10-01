@@ -607,6 +607,84 @@
     background: #218838;
 }
 
+/* Модальное окно выбора */
+.selection-modal {
+    max-width: 700px;
+    max-height: 80vh;
+}
+
+.selection-items-list {
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    background: #f8f9fa;
+}
+
+.selection-item {
+    padding: 15px;
+    border-bottom: 1px solid #dee2e6;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    background: white;
+}
+
+.selection-item:last-child {
+    border-bottom: none;
+}
+
+.selection-item:hover {
+    background: #e3f2fd;
+    transform: translateX(2px);
+}
+
+.selection-item-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.selection-item-header strong {
+    color: #333;
+    font-size: 16px;
+}
+
+.selection-item-details {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 8px;
+    font-size: 14px;
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 2px 0;
+}
+
+.detail-label {
+    font-weight: 600;
+    color: #666;
+    min-width: 100px;
+}
+
+.detail-value {
+    color: #333;
+    text-align: right;
+    font-family: monospace;
+}
+
+/* Кнопка успеха */
+.inventory-btn-success {
+    background: #28a745;
+    color: white;
+}
+
+.inventory-btn-success:hover {
+    background: #218838;
+}
+
 /* Уведомления */
 .inventory-notification {
     position: fixed;
@@ -750,6 +828,25 @@
         left: 10px;
         right: 10px;
         min-width: auto;
+    }
+    
+    /* Адаптивность модального окна выбора */
+    .selection-modal {
+        max-width: 95%;
+        margin: 10px;
+    }
+    
+    .selection-item-details {
+        grid-template-columns: 1fr;
+    }
+    
+    .detail-row {
+        flex-direction: column;
+        gap: 2px;
+    }
+    
+    .detail-value {
+        text-align: left;
     }
 }
 

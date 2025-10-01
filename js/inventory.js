@@ -143,11 +143,20 @@ loadColumnsConfig();
     
     // Функция поиска
     function performSearch() {
-        const searchTerm = searchInput.value.trim();
+        let searchTerm = searchInput.value.trim();
         
         if (!searchTerm) {
             showError('Введите инвентарный номер для поиска');
             return;
+        }
+        
+        // Убираем ведущие нули, но сохраняем хотя бы одну цифру
+        const originalTerm = searchTerm;
+        searchTerm = searchTerm.replace(/^0+/, '') || '0';
+        
+        // Если убрали ведущие нули, показываем уведомление
+        if (originalTerm !== searchTerm && originalTerm.startsWith('0')) {
+            showNotification(`Поиск по номеру: ${searchTerm} (убраны ведущие нули)`, 'info');
         }
         
         // Показываем индикатор загрузки
@@ -217,14 +226,15 @@ loadColumnsConfig();
         if (data.items.length === 0) {
             // Не найдено
             addNotFoundToBuffer(searchTerm);
+            renderBuffer();
+        } else if (data.items.length === 1) {
+            // Найден один элемент - добавляем сразу
+            addItemToBuffer(data.items[0], searchTerm);
+            renderBuffer();
         } else {
-            // Найдены элементы
-            data.items.forEach(item => {
-                addItemToBuffer(item, searchTerm);
-            });
+            // Найдено несколько элементов - показываем окно выбора
+            showSelectionModal(data.items, searchTerm);
         }
-        
-        renderBuffer();
     }
     
     // Добавление "не найдено" в буфер
@@ -267,6 +277,113 @@ loadColumnsConfig();
         
         // Добавляем в начало буфера (новые сверху)
         itemsBuffer.unshift(bufferItem);
+    }
+    
+    // Показать модальное окно выбора из множественных результатов
+    function showSelectionModal(items, searchTerm) {
+        const modalHtml = `
+            <div class="inventory-modal-overlay selection-modal-overlay" onclick="closeSelectionModal()">
+                <div class="inventory-modal selection-modal" onclick="event.stopPropagation()">
+                    <div class="inventory-modal-header">
+                        <h3>Найдено несколько позиций для "${searchTerm}" (${items.length})</h3>
+                        <button class="inventory-modal-close" onclick="closeSelectionModal()">&times;</button>
+                    </div>
+                    <div class="inventory-modal-body">
+                        <p>Выберите нужную позицию для добавления в буфер:</p>
+                        <div class="selection-items-list">
+                            ${items.map((item, index) => `
+                                <div class="selection-item" onclick="selectItem(${index})">
+                                    <div class="selection-item-header">
+                                        <span class="inventory-type-badge inventory-type-${item.type_class}">
+                                            ${escapeHtml(item.type)}
+                                        </span>
+                                        <strong>${escapeHtml(item.name)}</strong>
+                                    </div>
+                                    <div class="selection-item-details">
+                                        <div class="detail-row">
+                                            <span class="detail-label">Инв. номер:</span>
+                                            <span class="detail-value">${escapeHtml(item.otherserial || '-')}</span>
+                                        </div>
+                                        <div class="detail-row">
+                                            <span class="detail-label">Серийный номер:</span>
+                                            <span class="detail-value">${escapeHtml(item.serial || '-')}</span>
+                                        </div>
+                                        <div class="detail-row">
+                                            <span class="detail-label">Департамент:</span>
+                                            <span class="detail-value">${escapeHtml(item.group_name || '-')}</span>
+                                        </div>
+                                        <div class="detail-row">
+                                            <span class="detail-label">Статус:</span>
+                                            <span class="detail-value">${escapeHtml(item.state_name || '-')}</span>
+                                        </div>
+                                        <div class="detail-row">
+                                            <span class="detail-label">Местоположение:</span>
+                                            <span class="detail-value">${escapeHtml(item.location_name || '-')}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    <div class="inventory-modal-footer">
+                        <button class="inventory-action-btn inventory-btn-secondary" onclick="closeSelectionModal()">
+                            Отмена
+                        </button>
+                        <button class="inventory-action-btn inventory-btn-success" onclick="addAllItems()">
+                            <i class="fas fa-plus-circle"></i> Добавить все
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        
+        // Сохраняем данные для использования в функциях выбора
+        window.selectionModalData = {
+            items: items,
+            searchTerm: searchTerm
+        };
+    }
+    
+    // Закрыть модальное окно выбора
+    window.closeSelectionModal = function() {
+        const modal = document.querySelector('.selection-modal-overlay');
+        if (modal) {
+            modal.remove();
+        }
+        window.selectionModalData = null;
+    }
+    
+    // Выбрать конкретный элемент
+    window.selectItem = function(index) {
+        if (window.selectionModalData) {
+            const item = window.selectionModalData.items[index];
+            const searchTerm = window.selectionModalData.searchTerm;
+            
+            addItemToBuffer(item, searchTerm);
+            renderBuffer();
+            closeSelectionModal();
+            
+            showNotification(`Добавлена позиция: ${item.name}`, 'success');
+        }
+    }
+    
+    // Добавить все элементы
+    window.addAllItems = function() {
+        if (window.selectionModalData) {
+            const items = window.selectionModalData.items;
+            const searchTerm = window.selectionModalData.searchTerm;
+            
+            items.forEach(item => {
+                addItemToBuffer(item, searchTerm);
+            });
+            
+            renderBuffer();
+            closeSelectionModal();
+            
+            showNotification(`Добавлено ${items.length} позиций в буфер`, 'success');
+        }
     }
     
     // Показать индикатор загрузки
