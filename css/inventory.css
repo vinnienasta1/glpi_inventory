@@ -836,43 +836,139 @@
     }
 }
 
-/* Панель действий экспорта/импорта */
-.inventory-actions-panel {
-    display: flex;
-    gap: 30px;
-    margin: 20px 0;
-    padding: 20px;
-    background: #f8f9fa;
-    border-radius: 8px;
-    border: 1px solid #dee2e6;
+/* Панель импорта/экспорта */
+.inventory-import-export-panel {
+    margin: 15px 0;
+    text-align: center;
 }
 
-.inventory-actions-group {
-    flex: 1;
-}
-
-.inventory-actions-group h3 {
-    margin: 0 0 15px 0;
+.inventory-import-export-btn {
+    padding: 12px 24px;
     font-size: 16px;
+    font-weight: 500;
+    background: linear-gradient(135deg, #0d6efd, #6610f2);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.inventory-import-export-btn:hover {
+    background: linear-gradient(135deg, #0b5ed7, #520dc2);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.inventory-import-export-btn i {
+    margin-right: 8px;
+}
+
+/* Главное модальное окно импорта/экспорта */
+.import-export-modal {
+    max-width: 700px;
+}
+
+.import-export-tabs {
+    display: flex;
+    border-bottom: 2px solid #dee2e6;
+    margin-bottom: 20px;
+}
+
+.import-export-tab {
+    flex: 1;
+    padding: 15px 20px;
+    background: #f8f9fa;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 500;
+    color: #6c757d;
+    transition: all 0.3s ease;
+    border-bottom: 3px solid transparent;
+}
+
+.import-export-tab:first-child {
+    border-top-left-radius: 6px;
+}
+
+.import-export-tab:last-child {
+    border-top-right-radius: 6px;
+}
+
+.import-export-tab.active {
+    background: white;
+    color: #0d6efd;
+    border-bottom-color: #0d6efd;
+}
+
+.import-export-tab:hover:not(.active) {
+    background: #e9ecef;
     color: #495057;
+}
+
+.import-export-content {
+    display: none;
+}
+
+.import-export-content.active {
+    display: block;
+}
+
+.import-export-section {
+    margin-bottom: 25px;
+}
+
+.import-export-section h4 {
+    margin: 0 0 15px 0;
+    color: #495057;
+    font-size: 16px;
     font-weight: 600;
 }
 
-.inventory-actions-group .inventory-action-btn {
-    display: block;
-    width: 100%;
-    margin-bottom: 10px;
-    text-align: left;
+.import-export-buttons {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
 }
 
-.inventory-actions-group .inventory-action-btn:last-child {
-    margin-bottom: 0;
-}
-
-.inventory-actions-group .inventory-action-btn i {
-    width: 20px;
+.import-export-action-btn {
+    padding: 15px 20px;
+    border: 2px solid #dee2e6;
+    background: white;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
     text-align: center;
-    margin-right: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #495057;
+}
+
+.import-export-action-btn:hover {
+    border-color: #0d6efd;
+    background: #f8f9ff;
+    color: #0d6efd;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(13, 110, 253, 0.15);
+}
+
+.import-export-action-btn i {
+    display: block;
+    font-size: 24px;
+    margin-bottom: 8px;
+    color: #6c757d;
+}
+
+.import-export-action-btn:hover i {
+    color: #0d6efd;
+}
+
+.import-export-action-btn.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
 }
 
 /* Модальные окна импорта */
@@ -1014,16 +1110,35 @@
     margin: 0;
 }
 
-/* Адаптивность для панели действий */
+/* Адаптивность для кнопки импорта/экспорта */
 @media (max-width: 768px) {
-    .inventory-actions-panel {
-        flex-direction: column;
-        gap: 20px;
+    .inventory-import-export-btn {
+        font-size: 14px;
+        padding: 10px 20px;
     }
     
-    .inventory-actions-group .inventory-action-btn {
-        font-size: 14px;
-        padding: 10px 15px;
+    .import-export-buttons {
+        grid-template-columns: 1fr;
+    }
+    
+    .import-export-tabs {
+        flex-direction: column;
+    }
+    
+    .import-export-tab {
+        border-radius: 0;
+        border-bottom: 1px solid #dee2e6;
+    }
+    
+    .import-export-tab:first-child {
+        border-top-left-radius: 6px;
+        border-top-right-radius: 6px;
+    }
+    
+    .import-export-tab:last-child {
+        border-bottom-left-radius: 6px;
+        border-bottom-right-radius: 6px;
+        border-bottom: none;
     }
 }
 

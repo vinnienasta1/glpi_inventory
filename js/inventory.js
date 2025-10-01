@@ -960,20 +960,122 @@ loadColumnsConfig();
 });
 
 // ============================================
+// ГЛАВНОЕ МОДАЛЬНОЕ ОКНО ИМПОРТА/ЭКСПОРТА
+// ============================================
+
+// Показать главное модальное окно импорта/экспорта
+function showImportExportModal() {
+    const hasData = itemsBuffer.length > 0;
+    
+    const modal = document.createElement('div');
+    modal.className = 'inventory-modal-overlay';
+    modal.innerHTML = `
+        <div class="inventory-modal import-export-modal">
+            <div class="inventory-modal-header">
+                <h3>Импорт и экспорт данных</h3>
+                <button class="inventory-modal-close" onclick="closeImportExportModal()">&times;</button>
+            </div>
+            <div class="inventory-modal-body">
+                <div class="import-export-tabs">
+                    <button class="import-export-tab active" onclick="switchImportExportTab('import')">
+                        <i class="fas fa-download"></i> Импорт
+                    </button>
+                    <button class="import-export-tab" onclick="switchImportExportTab('export')">
+                        <i class="fas fa-upload"></i> Экспорт
+                    </button>
+                </div>
+                
+                <!-- Вкладка импорта -->
+                <div id="import-content" class="import-export-content active">
+                    <div class="import-export-section">
+                        <h4>Импорт инвентарных номеров</h4>
+                        <div class="import-export-buttons">
+                            <div class="import-export-action-btn" onclick="showImportModal(); closeImportExportModal();">
+                                <i class="fas fa-file-upload"></i>
+                                <div>Из файла</div>
+                                <small>TXT, CSV, Excel</small>
+                            </div>
+                            <div class="import-export-action-btn" onclick="showClipboardImportModal(); closeImportExportModal();">
+                                <i class="fas fa-clipboard"></i>
+                                <div>Из буфера обмена</div>
+                                <small>Вставить список номеров</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Вкладка экспорта -->
+                <div id="export-content" class="import-export-content">
+                    <div class="import-export-section">
+                        <h4>Экспорт найденных позиций</h4>
+                        <div class="import-export-buttons">
+                            <div class="import-export-action-btn ${!hasData ? 'disabled' : ''}" onclick="${hasData ? 'exportToCSV(); closeImportExportModal();' : ''}">
+                                <i class="fas fa-file-csv"></i>
+                                <div>CSV файл</div>
+                                <small>Для Excel и других программ</small>
+                            </div>
+                            <div class="import-export-action-btn ${!hasData ? 'disabled' : ''}" onclick="${hasData ? 'exportToExcel(); closeImportExportModal();' : ''}">
+                                <i class="fas fa-file-excel"></i>
+                                <div>Excel файл</div>
+                                <small>Готовый для Excel</small>
+                            </div>
+                            <div class="import-export-action-btn ${!hasData ? 'disabled' : ''}" onclick="${hasData ? 'generateReport(); closeImportExportModal();' : ''}">
+                                <i class="fas fa-print"></i>
+                                <div>Отчет для печати</div>
+                                <small>HTML с возможностью печати</small>
+                            </div>
+                        </div>
+                        ${!hasData ? '<p style="text-align: center; color: #6c757d; margin-top: 15px;"><i class="fas fa-info-circle"></i> Сначала найдите позиции для экспорта</p>' : ''}
+                    </div>
+                </div>
+            </div>
+            <div class="inventory-modal-footer">
+                <button class="inventory-action-btn inventory-btn-secondary" onclick="closeImportExportModal()">
+                    Закрыть
+                </button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    window.currentImportExportModal = modal;
+}
+
+// Закрыть главное модальное окно
+function closeImportExportModal() {
+    if (window.currentImportExportModal) {
+        window.currentImportExportModal.remove();
+        window.currentImportExportModal = null;
+    }
+}
+
+// Переключение вкладок
+function switchImportExportTab(tab) {
+    // Убираем активный класс со всех вкладок
+    document.querySelectorAll('.import-export-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.import-export-content').forEach(c => c.classList.remove('active'));
+    
+    // Находим кнопку по тексту и добавляем активный класс
+    const tabs = document.querySelectorAll('.import-export-tab');
+    tabs.forEach(t => {
+        if ((tab === 'import' && t.textContent.includes('Импорт')) || 
+            (tab === 'export' && t.textContent.includes('Экспорт'))) {
+            t.classList.add('active');
+        }
+    });
+    
+    // Показываем соответствующий контент
+    document.getElementById(tab + '-content').classList.add('active');
+}
+
+// ============================================
 // СИСТЕМА ЭКСПОРТА ДАННЫХ
 // ============================================
 
-// Обновление состояния кнопок экспорта
+// Обновление состояния кнопок экспорта (больше не нужна, но оставим для совместимости)
 function updateExportButtonsState() {
-    const hasData = itemsBuffer.length > 0;
-    const exportButtons = ['export-csv-btn', 'export-excel-btn', 'generate-report-btn'];
-    
-    exportButtons.forEach(btnId => {
-        const btn = document.getElementById(btnId);
-        if (btn) {
-            btn.disabled = !hasData;
-        }
-    });
+    // Функция больше не используется, так как кнопки теперь в модальном окне
+    // Оставлена для совместимости с существующим кодом
 }
 
 // Экспорт в CSV
@@ -1091,8 +1193,8 @@ function performExport(type) {
     
     // Фильтруем данные
     let dataToExport = itemsBuffer.filter(item => {
-        if (!includeNotFound && item.not_found) return false;
-        if (!includeDuplicates && item.is_duplicate) return false;
+        if (!includeNotFound && item.isNotFound) return false;
+        if (!includeDuplicates && item.isDuplicate) return false;
         return true;
     });
     
@@ -1119,6 +1221,41 @@ function performExport(type) {
     closeExportModal();
 }
 
+// Получить значение ячейки для экспорта (без HTML)
+function getCellValueForExport(item, columnKey) {
+    switch(columnKey) {
+        case 'search_term':
+            return item.search_term || '';
+        case 'type':
+            if (item.isNotFound) {
+                return 'Не найдено';
+            }
+            return (item.type || '') + (item.isDuplicate ? ' (Дубликат)' : '');
+        case 'name':
+            return item.name || '-';
+        case 'otherserial':
+            return item.otherserial || '-';
+        case 'serial':
+            return item.serial || '-';
+        case 'group_name':
+            return item.group_name || '-';
+        case 'state_name':
+            return item.state_name || '-';
+        case 'contact':
+            return item.contact || '-';
+        case 'location_name':
+            return item.location_name || '-';
+        case 'user_name':
+            return item.user_name || '-';
+        case 'comment':
+            return item.comment || '-';
+        case 'actions':
+            return ''; // Действия не экспортируем
+        default:
+            return item[columnKey] || '';
+    }
+}
+
 // Экспорт в CSV файл
 function exportToCSVFile(data, columns) {
     const headers = columns.map(col => col.name);
@@ -1126,7 +1263,7 @@ function exportToCSVFile(data, columns) {
         headers.join(','),
         ...data.map(item => 
             columns.map(col => {
-                let value = getCellValue(item, col.key) || '';
+                let value = getCellValueForExport(item, col.key);
                 // Экранируем кавычки и переносы строк
                 if (value.includes(',') || value.includes('"') || value.includes('\n')) {
                     value = '"' + value.replace(/"/g, '""') + '"';
@@ -1147,7 +1284,7 @@ function exportToExcelFile(data, columns) {
         headers.join('\t'),
         ...data.map(item => 
             columns.map(col => {
-                let value = getCellValue(item, col.key) || '';
+                let value = getCellValueForExport(item, col.key);
                 // Для Excel используем табуляцию как разделитель
                 return value.replace(/\t/g, ' ').replace(/\n/g, ' ');
             }).join('\t')
@@ -1202,15 +1339,15 @@ function generatePrintReport(data, columns) {
             <div class="stats">
                 <div class="stats-grid">
                     <div class="stat-item">
-                        <div class="stat-value">${data.filter(item => !item.not_found).length}</div>
+                        <div class="stat-value">${data.filter(item => !item.isNotFound).length}</div>
                         <div class="stat-label">Найдено</div>
                     </div>
                     <div class="stat-item">
-                        <div class="stat-value">${data.filter(item => item.not_found).length}</div>
+                        <div class="stat-value">${data.filter(item => item.isNotFound).length}</div>
                         <div class="stat-label">Не найдено</div>
                     </div>
                     <div class="stat-item">
-                        <div class="stat-value">${data.filter(item => item.is_duplicate).length}</div>
+                        <div class="stat-value">${data.filter(item => item.isDuplicate).length}</div>
                         <div class="stat-label">Дубликаты</div>
                     </div>
                 </div>
@@ -1224,8 +1361,8 @@ function generatePrintReport(data, columns) {
                 </thead>
                 <tbody>
                     ${data.map(item => `
-                        <tr class="${item.not_found ? 'not-found' : ''} ${item.is_duplicate ? 'duplicate' : ''}">
-                            ${columns.map(col => `<td>${getCellValue(item, col.key) || ''}</td>`).join('')}
+                        <tr class="${item.isNotFound ? 'not-found' : ''} ${item.isDuplicate ? 'duplicate' : ''}">
+                            ${columns.map(col => `<td>${getCellValueForExport(item, col.key) || ''}</td>`).join('')}
                         </tr>
                     `).join('')}
                 </tbody>
