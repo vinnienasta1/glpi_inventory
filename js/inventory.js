@@ -2,23 +2,8 @@
  * JavaScript для плагина Inventory
  */
 
-document.addEventListener('DOMContentLoaded', function() {
-    const searchForm = document.getElementById('inventory-search-form');
-    const searchInput = document.getElementById('inventory-search-input');
-    const searchBtn = document.getElementById('inventory-search-btn');
-    const resultsContainer = document.getElementById('inventory-results');
-    
-    if (!searchForm || !searchInput || !searchBtn || !resultsContainer) {
-        return;
-    }
-    
-    // Буфер для накопления позиций
-    let itemsBuffer = [];
-
-
-// ============================================
-// СИСТЕМА УПРАВЛЕНИЯ СТОЛБЦАМИ
-// ============================================
+// Глобальные переменные
+let itemsBuffer = [];
 
 // Глобальная конфигурация столбцов
 let columnsConfig = {
@@ -35,6 +20,16 @@ let columnsConfig = {
     'comment': { name: 'Комментарий', visible: false, order: 10, key: 'comment' },
     'actions': { name: 'Действия', visible: true, order: 11, key: 'actions' }
 };
+
+document.addEventListener('DOMContentLoaded', function() {
+    const searchForm = document.getElementById('inventory-search-form');
+    const searchInput = document.getElementById('inventory-search-input');
+    const searchBtn = document.getElementById('inventory-search-btn');
+    const resultsContainer = document.getElementById('inventory-results');
+    
+    if (!searchForm || !searchInput || !searchBtn || !resultsContainer) {
+        return;
+    }
 
 // Загрузить настройки столбцов из localStorage
 function loadColumnsConfig() {
@@ -424,12 +419,6 @@ loadColumnsConfig();
                         </button>
                         <button class="inventory-action-btn inventory-btn-warning" onclick="showBulkEditModal()">
                             <i class="fas fa-edit"></i> Изменить
-                        </button>
-                        <button class="inventory-action-btn inventory-btn-success" onclick="showExportModal()">
-                            <i class="fas fa-download"></i> Экспорт
-                        </button>
-                        <button class="inventory-action-btn inventory-btn-primary" onclick="showImportModal()">
-                            <i class="fas fa-upload"></i> Импорт
                         </button>
                         <button class="inventory-action-btn inventory-btn-info" onclick="showColumnsModal()">
                             <i class="fas fa-columns"></i> Столбцы
@@ -1115,7 +1104,7 @@ function generateReport() {
 }
 
 // Показать модальное окно экспорта
-window.showExportModal = function(type) {
+function showExportModal(type) {
     const typeNames = {
         'csv': 'CSV файл',
         'excel': 'Excel файл',
@@ -1175,7 +1164,7 @@ window.showExportModal = function(type) {
 }
 
 // Закрыть модальное окно экспорта
-window.closeExportModal = function() {
+function closeExportModal() {
     if (window.currentExportModal) {
         window.currentExportModal.remove();
         window.currentExportModal = null;
@@ -1183,7 +1172,7 @@ window.closeExportModal = function() {
 }
 
 // Выполнить экспорт
-window.performExport = function(type) {
+function performExport(type) {
     const selectedColumns = [];
     const checkboxes = document.querySelectorAll('.export-column-checkbox:checked');
     checkboxes.forEach(cb => {
@@ -1410,7 +1399,7 @@ function downloadFile(content, filename, mimeType) {
 // ============================================
 
 // Показать модальное окно импорта из файла
-window.showImportModal = function() {
+function showImportModal() {
     const modal = document.createElement('div');
     modal.className = 'inventory-modal-overlay';
     modal.innerHTML = `
@@ -1528,7 +1517,7 @@ function showClipboardImportModal() {
 }
 
 // Закрыть модальное окно импорта
-window.closeImportModal = function() {
+function closeImportModal() {
     if (window.currentImportModal) {
         window.currentImportModal.remove();
         window.currentImportModal = null;
