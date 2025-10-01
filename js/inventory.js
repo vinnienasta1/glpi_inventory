@@ -1258,7 +1258,7 @@ function getCellValueForExport(item, columnKey) {
 }
 
 // Экспорт в CSV файл
-window.exportToCSV = functionFile(data, columns) {
+window.exportToCSV = function(data, columns) {
     const headers = columns.map(col => col.name);
     const csvContent = [
         headers.join(','),
@@ -1279,7 +1279,7 @@ window.exportToCSV = functionFile(data, columns) {
 }
 
 // Экспорт в Excel файл (используем CSV с BOM для корректного отображения в Excel)
-window.exportToExcel = functionFile(data, columns) {
+window.exportToExcel = function(data, columns) {
     const headers = columns.map(col => col.name);
     const csvContent = [
         headers.join('\t'),

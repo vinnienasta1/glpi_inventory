@@ -12,14 +12,14 @@ Session::checkLoginUser();
 Html::header('Инвенторизация', $_SERVER['PHP_SELF'], "tools", "PluginInventoryInventory");
 
 // Подключаем CSS и JS
-echo "<link rel='stylesheet' type='text/css' href='/plugins/inventory/css/inventory.css?v=" . time() . "'>";
+echo "<link rel='stylesheet' type='text/css' href='/plugins/inventory/css/inventory.css?v=" . time() . "'>"
 
 // Передаем CSRF токен в JavaScript ПРАВИЛЬНО
 echo "<script>";
 echo "var GLPI_CSRF_TOKEN = '" . Session::getNewCSRFToken() . "';";
 echo "</script>";
 
-echo "<script src='/plugins/inventory/js/inventory.js?v=" . time() . "'></script>";
+echo "<script src='/plugins/inventory/js/inventory.js?v=" . time() . "'></script>"
 
 // Режим отладки
 $debug_mode = false;
