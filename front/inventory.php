@@ -20,6 +20,8 @@ echo "var GLPI_CSRF_TOKEN = '" . Session::getNewCSRFToken() . "';";
 echo "</script>";
 
 echo "<script src='/plugins/inventory/js/inventory.js?v=" . time() . "'></script>";
+echo "<script src='https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js'></script>";
+echo "<script src='/plugins/inventory/js/inventory_import_export.js?v=" . time() . "'></script>";
 
 // Режим отладки
 $debug_mode = false;
