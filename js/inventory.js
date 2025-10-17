@@ -900,12 +900,19 @@ loadColumnsConfig();
                 if (t.name.toLowerCase().startsWith('giveing')) title = 'Акт Выдачи';
                 else if (t.name.toLowerCase().startsWith('return')) title = 'Акт Возврата';
                 else if (t.name.toLowerCase().startsWith('sale')) title = 'Акт Выкупа';
-                html += `<div class="export-column-item">
-                    <div style="display:flex;gap:8px;flex-wrap:wrap">
-                        <button class="inventory-action-btn inventory-btn-primary" onclick="generateAct('${t.name}')">${title} (XLSX)</button>
-                        <button class="inventory-action-btn inventory-btn-secondary" onclick="generateActHTML('${t.name.split('.')[0]}')">${title} (HTML)</button>
-                    </div>
-                </div>`;
+                const base = t.name.split('.')[0];
+                const isHtml = (t.type === 'html' || t.name.toLowerCase().endsWith('.html'));
+                const isXlsx = (t.type === 'xlsx' || t.name.toLowerCase().endsWith('.xlsx'));
+                html += `<div class="export-column-item">`;
+                html += `<div style="display:flex;gap:8px;flex-wrap:wrap">`;
+                if (isXlsx) {
+                    html += `<button class="inventory-action-btn inventory-btn-primary" onclick="generateAct('${t.name}')">${title} (XLSX)</button>`;
+                }
+                if (isHtml) {
+                    html += `<button class="inventory-action-btn inventory-btn-secondary" onclick="generateActHTML('${base}')">${title} (HTML)</button>`;
+                }
+                html += `</div>`;
+                html += `</div>`;
             });
             html += '</div>';
             container.innerHTML = html;

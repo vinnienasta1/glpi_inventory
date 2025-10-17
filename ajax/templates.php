@@ -1,6 +1,6 @@
 <?php
 /**
- * AJAX: список и получение шаблонов актов (XLSX)
+ * AJAX: список и получение шаблонов актов (XLSX/HTML)
  */
 
 // Поиск корня GLPI
@@ -41,10 +41,11 @@ switch ($action) {
         foreach ($files as $f) {
             if ($f === '.' || $f === '..') continue;
             $path = $templatesDir . DIRECTORY_SEPARATOR . $f;
-            if (is_file($path) && preg_match('/\.xlsx$/i', $f)) {
+            if (is_file($path) && preg_match('/\.(xlsx|html)$/i', $f, $m)) {
                 $list[] = [
                     'name' => $f,
-                    'size' => filesize($path)
+                    'size' => filesize($path),
+                    'type' => strtolower($m[1])
                 ];
             }
         }
@@ -63,20 +64,36 @@ switch ($action) {
             echo json_encode(['success' => false, 'error' => 'Файл не найден']);
             exit;
         }
-        if (!preg_match('/\.xlsx$/i', $filePath)) {
+        if (!preg_match('/\.(xlsx|html)$/i', $filePath, $m)) {
             echo json_encode(['success' => false, 'error' => 'Неподдерживаемый формат']);
             exit;
         }
-        $content = file_get_contents($filePath);
-        if ($content === false) {
-            echo json_encode(['success' => false, 'error' => 'Ошибка чтения файла']);
-            exit;
+        $ext = strtolower($m[1]);
+        if ($ext === 'xlsx') {
+            $content = file_get_contents($filePath);
+            if ($content === false) {
+                echo json_encode(['success' => false, 'error' => 'Ошибка чтения файла']);
+                exit;
+            }
+            echo json_encode([
+                'success' => true,
+                'name' => $base,
+                'type' => $ext,
+                'content_base64' => base64_encode($content)
+            ]);
+        } else if ($ext === 'html') {
+            $html = file_get_contents($filePath);
+            if ($html === false) {
+                echo json_encode(['success' => false, 'error' => 'Ошибка чтения файла']);
+                exit;
+            }
+            echo json_encode([
+                'success' => true,
+                'name' => $base,
+                'type' => $ext,
+                'html' => $html
+            ]);
         }
-        echo json_encode([
-            'success' => true,
-            'name' => $base,
-            'content_base64' => base64_encode($content)
-        ]);
         break;
 
     default:
