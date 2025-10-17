@@ -55,7 +55,20 @@
       '</div>'+
     '</div>';
     overlay.innerHTML=html; document.body.appendChild(overlay);
-    // Удалено добавление поля "Название файла"
+    // Добавляем поле имени файла (для экспорта)
+    try {
+      var body = overlay.querySelector('.inventory-modal-body');
+      if (body) {
+        var nameWrap = document.createElement('div');
+        nameWrap.style.marginBottom='10px';
+        var defName = 'inventory_export_' + new Date().toISOString().slice(0,10);
+        nameWrap.innerHTML = '<label>Название файла:&nbsp;'
+          + '<input type="text" id="exp-filename" placeholder="'+defName+'" '
+          + 'style="padding:6px 8px;border:1px solid #ddd;border-radius:4px;width:60%"></label>';
+        var insertBeforeEl = body.querySelector('#exp-cols') ? body.querySelector('#exp-cols').parentElement : body.firstChild;
+        body.insertBefore(nameWrap, insertBeforeEl);
+      }
+    } catch(e) { /* ignore */ }
 
     overlay.querySelector('#exp-close').onclick=overlay.querySelector('#exp-cancel').onclick=function(){ overlay.remove(); };
     var colsBox = overlay.querySelector('#exp-cols');
@@ -114,20 +127,6 @@
         '</div>'+
       '</div>';
     overlay.innerHTML=html; document.body.appendChild(overlay);
-    // Добавляем поле имени файла программно
-    try {
-      var body = overlay.querySelector('.inventory-modal-body');
-      if (body) {
-        var nameWrap = document.createElement('div');
-        nameWrap.style.marginBottom='10px';
-        nameWrap.innerHTML = '<label>Название файла:&nbsp;' +
-          '<input type="text" id="exp-filename" placeholder="inventory_export" ' +
-          'style="padding:6px 8px;border:1px solid #ddd;border-radius:4px;width:60%"></label>';
-        body.insertBefore(nameWrap, body.firstChild);
-        var defName = 'inventory_export_' + new Date().toISOString().slice(0,10);
-        var f = document.getElementById('exp-filename'); if (f && !f.value) f.value = defName;
-      }
-    } catch(e) { console && console.warn && console.warn('exp-filename add failed', e); }
 
     overlay.querySelector('#imp-close').onclick=overlay.querySelector('#imp-cancel').onclick=function(){ overlay.remove(); };
     var fileInput = overlay.querySelector('#imp-file');
