@@ -74,77 +74,35 @@ foreach ($items as $item) {
     
     foreach ($changes as $change) {
         $field = $change['field'];
-        $value = $change['value'];
+        $value = $change['value'] ?? null;
+        $idValue = isset($change['id']) ? (int)$change['id'] : 0;
         
-        // Преобразуем имена полей из фронтенда в поля GLPI
-        $glpiField = null;
-        
+        // Преобразуем имена полей из фронтенда в поля GLPI (предпочитаем ID)
         switch ($field) {
             case 'group_name':
-                $glpiField = 'groups_id';
-                // Находим ID группы по имени
-                $group = new Group();
-                $groupId = $group->import(['name' => $value]);
-                if ($groupId) {
-                    $updateData[$glpiField] = $groupId;
+                if ($idValue > 0) {
+                    $updateData['groups_id'] = $idValue;
                 }
                 break;
-                
             case 'state_name':
-                $glpiField = 'states_id';
-                // Находим ID статуса по имени
-                $iterator = $DB->request([
-                    'SELECT' => 'id',
-                    'FROM' => 'glpi_states',
-                    'WHERE' => ['completename' => $value]
-                ]);
-                foreach ($iterator as $row) {
-                    $updateData[$glpiField] = $row['id'];
-                    break;
+                if ($idValue > 0) {
+                    $updateData['states_id'] = $idValue;
                 }
                 break;
-                
             case 'location_name':
-                $glpiField = 'locations_id';
-                // Находим ID местоположения по имени
-                $iterator = $DB->request([
-                    'SELECT' => 'id',
-                    'FROM' => 'glpi_locations',
-                    'WHERE' => ['completename' => $value]
-                ]);
-                foreach ($iterator as $row) {
-                    $updateData[$glpiField] = $row['id'];
-                    break;
+                if ($idValue > 0) {
+                    $updateData['locations_id'] = $idValue;
                 }
                 break;
-                
             case 'user_name':
-                $glpiField = 'users_id';
-                // Находим ID пользователя по имени
-                $names = explode(' ', trim($value));
-                $where = [];
-                if (count($names) >= 2) {
-                    $where = [
-                        'realname' => $names[0],
-                        'firstname' => $names[1]
-                    ];
-                } else {
-                    $where = ['realname' => $value];
-                }
-                $iterator = $DB->request([
-                    'SELECT' => 'id',
-                    'FROM' => 'glpi_users',
-                    'WHERE' => $where
-                ]);
-                foreach ($iterator as $row) {
-                    $updateData[$glpiField] = $row['id'];
-                    break;
+                if ($idValue > 0) {
+                    $updateData['users_id'] = $idValue;
                 }
                 break;
-                
             case 'contact':
-                $glpiField = 'contact';
-                $updateData[$glpiField] = $value;
+                if ($value !== null) {
+                    $updateData['contact'] = $value;
+                }
                 break;
         }
     }

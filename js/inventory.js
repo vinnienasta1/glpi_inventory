@@ -660,10 +660,10 @@ loadColumnsConfig();
         })
         .then(response => response.json())
         .then(data => {
-            if (data.success && data.data) {
+                if (data.success && data.data) {
                 let options = '<option value="">Выберите значение</option>';
                 data.data.forEach(item => {
-                    options += `<option value="${escapeHtml(item.name)}">${escapeHtml(item.name)}</option>`;
+                    options += `<option value="${item.id}">${escapeHtml(item.name)}</option>`;
                 });
                 valueContainer.innerHTML = `<select class="rule-value-select">${options}</select>`;
             } else {
@@ -695,10 +695,18 @@ loadColumnsConfig();
             const valueElement = rule.querySelector('.rule-value-select, .rule-value-input');
             
             if (fieldSelect.value && valueElement && valueElement.value) {
-                changes.push({
-                    field: fieldSelect.value,
-                    value: valueElement.value
-                });
+                let change = { field: fieldSelect.value };
+                if (valueElement.classList.contains('rule-value-select')) {
+                    const selectedOption = valueElement.options[valueElement.selectedIndex];
+                    change.value = selectedOption ? selectedOption.textContent : '';
+                    const idVal = selectedOption ? selectedOption.value : '';
+                    if (idVal && !isNaN(parseInt(idVal, 10))) {
+                        change.id = parseInt(idVal, 10);
+                    }
+                } else {
+                    change.value = valueElement.value;
+                }
+                changes.push(change);
             }
         });
         
@@ -1198,7 +1206,7 @@ window.performExport = function(type) {
 }
 
 // Получить значение ячейки для экспорта (без HTML)
-window.getCellValue = function(item, columnKey) {
+window.getCellValueForExport = function(item, columnKey) {
     switch(columnKey) {
         case 'search_term':
             return item.search_term || '';
@@ -1233,7 +1241,7 @@ window.getCellValue = function(item, columnKey) {
 }
 
 // Экспорт в CSV файл
-window.exportToCSV = function(data, columns) {
+window.exportToCSVFile = function(data, columns) {
     const headers = columns.map(col => col.name);
     const csvContent = [
         headers.join(','),
@@ -1254,7 +1262,7 @@ window.exportToCSV = function(data, columns) {
 }
 
 // Экспорт в Excel файл (используем CSV с BOM для корректного отображения в Excel)
-window.exportToExcel = function(data, columns) {
+window.exportToExcelFile = function(data, columns) {
     const headers = columns.map(col => col.name);
     const csvContent = [
         headers.join('\t'),

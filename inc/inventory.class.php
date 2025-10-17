@@ -42,6 +42,7 @@ class PluginInventoryInventory extends CommonGLPI {
         
         $items = [];
         $types = ['Computer', 'Monitor', 'Peripheral'];
+        $limit = 50; // ограничиваем количество результатов на тип для производительности
         
         foreach ($types as $type) {
             $table = 'glpi_' . strtolower($type) . 's';
@@ -55,7 +56,9 @@ class PluginInventoryInventory extends CommonGLPI {
                         'otherserial' => ['LIKE', '%' . $DB->escape($serial) . '%'],
                         'serial' => ['LIKE', '%' . $DB->escape($serial) . '%']
                     ]
-                ]
+                ],
+                'ORDER' => 'id DESC',
+                'LIMIT' => $limit
             ]);
             
             foreach ($iterator as $data) {
