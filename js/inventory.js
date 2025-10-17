@@ -196,16 +196,19 @@ loadColumnsConfig();
         .then(data => {
             if (data.error) {
                 showNotification(data.error, 'error');
+                renderBuffer();
             } else if (data.success) {
                 addToBuffer(data, searchTerm);
             } else {
                 showNotification('Неизвестная ошибка при поиске', 'error');
+                renderBuffer();
             }
         })
         .catch(error => {
             console.error('Ошибка:', error);
             // Показываем уведомление об ошибке соединения
             showNotification('Ошибка соединения с сервером', 'error');
+            renderBuffer();
         })
         .finally(() => {
             // Включаем кнопку поиска

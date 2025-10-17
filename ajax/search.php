@@ -31,11 +31,7 @@ if (!isset($_POST['search_serial']) || empty(trim($_POST['search_serial']))) {
 
 $serial = trim($_POST['search_serial']);
 
-// Базовая валидация: минимальная длина запроса
-if (mb_strlen($serial) < 2) {
-    echo json_encode(['error' => 'Слишком короткий запрос']);
-    exit;
-}
+// Разрешаем поиск по одному символу
 
 try {
     $items = PluginInventoryInventory::searchBySerial($serial);
