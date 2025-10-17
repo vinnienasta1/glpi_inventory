@@ -156,9 +156,17 @@ if ($workbookXml !== false) {
 
 // Fallback: первый xml в xl/worksheets/
 if ($sheetPath === null) {
-    for ($i = 1; $i <= 20; $i++) {
-        $candidate = 'xl/worksheets/sheet' . $i . '.xml';
-        if ($zip->locateName($candidate, ZipArchive::FL_NODIR) !== false) { $sheetPath = $candidate; break; }
+    // Перебор всех файлов в архиве и выбор первого листа из xl/worksheets/
+    $candidates = [];
+    for ($i = 0; $i < $zip->numFiles; $i++) {
+        $name = $zip->getNameIndex($i);
+        if (preg_match('#^xl/worksheets/[^/]+\.xml$#i', $name)) {
+            $candidates[] = $name;
+        }
+    }
+    if (!empty($candidates)) {
+        sort($candidates, SORT_STRING);
+        $sheetPath = $candidates[0];
     }
 }
 
@@ -174,6 +182,17 @@ if ($sheetXml === false) {
     $zip->close();
     echo json_encode(['success' => false, 'error' => 'Не удалось прочитать worksheet']);
     exit;
+}
+
+// Если ФИО выдающего не передано с клиента, берём из сессии GLPI
+if ($issuerName === '') {
+    $uid = Session::getLoginUserID();
+    if ($uid) {
+        $u = new User();
+        if ($u->getFromDB($uid)) {
+            $issuerName = trim(($u->fields['realname'] ?? '') . ' ' . ($u->fields['firstname'] ?? ''));
+        }
+    }
 }
 
 // Заполнение строк (первые 6 позиций)
