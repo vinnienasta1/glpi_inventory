@@ -12,7 +12,7 @@ Session::checkLoginUser();
 Html::header('Инвенторизация', $_SERVER['PHP_SELF'], "tools", "PluginInventoryInventory");
 
 // Подключаем CSS и JS
-echo "<link rel='stylesheet' type='text/css' href='/plugins/inventory/css/inventory.css?v=" . time() . "'>";
+echo "<link rel='stylesheet' type='text/css' href='/plugins/inventory/css/inventory.css?v=" . PLUGIN_INVENTORY_VERSION . "'>";
 
 // Передаем CSRF токен и ФИО текущего пользователя в JavaScript
 echo "<script>";
@@ -28,9 +28,8 @@ if ($__uid) {
 echo "var GLPI_CURRENT_USER_NAME = '" . Html::cleanInputText($__user_name_js) . "';";
 echo "</script>";
 
-echo "<script src='/plugins/inventory/js/inventory.js?v=" . time() . "'></script>";
-echo "<script src='https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js'></script>";
-echo "<script src='/plugins/inventory/js/inventory_import_export.js?v=" . time() . "'></script>";
+echo "<script src='/plugins/inventory/js/inventory.js?v=" . PLUGIN_INVENTORY_VERSION . "'></script>";
+echo "<script src='/plugins/inventory/js/inventory_import_export.js?v=" . PLUGIN_INVENTORY_VERSION . "'></script>";
 
 // Режим отладки
 $debug_mode = false;
