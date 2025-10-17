@@ -911,83 +911,53 @@ loadColumnsConfig();
         });
     }
 
-    // Генерация акта: скачиваем шаблон, подставляем данные (простая вкладка XLSX через SheetJS), сохраняем
+    // Генерация акта: серверная подстановка по координатам с сохранением стилей
     window.generateAct = async function(templateName) {
         try {
-            const headers = {};
-            if (typeof GLPI_CSRF_TOKEN !== 'undefined') {
-                headers['X-Glpi-Csrf-Token'] = GLPI_CSRF_TOKEN;
-            }
-            const resp = await fetch(`/plugins/inventory/ajax/templates.php?action=get&name=${encodeURIComponent(templateName)}`, {
-                method: 'GET',
+            const headers = { 'Content-Type': 'application/json' };
+            if (typeof GLPI_CSRF_TOKEN !== 'undefined') headers['X-Glpi-Csrf-Token'] = GLPI_CSRF_TOKEN;
+
+            const actualItems = itemsBuffer.filter(i => !i.isNotFound && !i.isDuplicate).slice(0, 6);
+            const first = actualItems[0];
+            const issuer = (typeof GLPI_CURRENT_USER_NAME !== 'undefined' ? GLPI_CURRENT_USER_NAME : '') || '';
+            const userName = first && first.user_name ? first.user_name : '';
+
+            const payload = {
+                template: templateName,
+                items: actualItems.map(it => ({
+                    name: it.name || '',
+                    otherserial: it.otherserial || '',
+                    serial: it.serial || '',
+                    user_name: it.user_name || ''
+                })),
+                issuer_name: issuer,
+                user_name: userName
+            };
+
+            const resp = await fetch('/plugins/inventory/ajax/generate_act.php', {
+                method: 'POST',
                 headers: headers,
+                body: JSON.stringify(payload),
                 credentials: 'same-origin'
             });
             const data = await resp.json();
             if (!data.success) {
-                showNotification('Не удалось получить шаблон: ' + (data.error || ''), 'error');
+                showNotification('Ошибка генерации акта: ' + (data.error || ''), 'error');
                 return;
             }
-            if (typeof XLSX === 'undefined') {
-                showNotification('Библиотека XLSX не загружена', 'error');
-                return;
-            }
-            const binary = atob(data.content_base64);
-            const len = binary.length;
+            const bstr = atob(data.content_base64);
+            const len = bstr.length;
             const bytes = new Uint8Array(len);
-            for (let i = 0; i < len; i++) bytes[i] = binary.charCodeAt(i);
-            const wb = XLSX.read(bytes, { type: 'array', cellStyles: true });
-
-            // Главный лист шаблона (первый)
-            const wsName = wb.SheetNames[0];
-            const ws = wb.Sheets[wsName];
-
-            // Собираем максимум 6 позиций
-            const actualItems = itemsBuffer.filter(i => !i.isNotFound && !i.isDuplicate).slice(0, 6);
-
-            // Обновление ячейки без разрушения стилей/формул
-            function setCell(addr, value) {
-                const existing = ws[addr] || {};
-                const styleBackup = existing.s; // сохраняем стиль
-                existing.v = value == null ? '' : String(value);
-                existing.t = 's';
-                if (styleBackup) existing.s = styleBackup;
-                ws[addr] = existing;
-            }
-
-            const tpl = (templateName || '').toLowerCase();
-
-            if (tpl.startsWith('giveing')) {
-                // C6-C11: Наименования; G6-G11: Инв; I6-I11: Серийные
-                for (let i = 0; i < 6; i++) {
-                    const row = 6 + i;
-                    const item = actualItems[i];
-                    setCell(`C${row}`, item ? (item.name || '') : '');
-                    setCell(`G${row}`, item ? (item.otherserial || '') : '');
-                    setCell(`I${row}`, item ? (item.serial || '') : '');
-                }
-                if (typeof GLPI_CURRENT_USER_NAME !== 'undefined') setCell('B26', GLPI_CURRENT_USER_NAME || '');
-                const first = actualItems[0];
-                if (first && first.user_name) setCell('B28', first.user_name);
-            } else if (tpl.startsWith('return')) {
-                // Возврат: только подписи
-                if (typeof GLPI_CURRENT_USER_NAME !== 'undefined') setCell('B34', GLPI_CURRENT_USER_NAME || '');
-                const first = actualItems[0];
-                if (first && first.user_name) setCell('B36', first.user_name);
-            } else if (tpl.startsWith('sale')) {
-                // Выкуп: только подписи
-                if (typeof GLPI_CURRENT_USER_NAME !== 'undefined') setCell('B32', GLPI_CURRENT_USER_NAME || '');
-                const first = actualItems[0];
-                if (first && first.user_name) setCell('B34', first.user_name);
-            }
-
-            // Имя файла в зависимости от шаблона
-            let filename = `Акт_${new Date().toISOString().slice(0,10)}.xlsx`;
-            if (tpl.startsWith('giveing')) filename = `Акт_Выдачи_${new Date().toISOString().slice(0,10)}.xlsx`;
-            else if (tpl.startsWith('return')) filename = `Акт_Возврата_${new Date().toISOString().slice(0,10)}.xlsx`;
-            else if (tpl.startsWith('sale')) filename = `Акт_Выкупа_${new Date().toISOString().slice(0,10)}.xlsx`;
-
-            XLSX.writeFile(wb, filename);
+            for (let i = 0; i < len; i++) bytes[i] = bstr.charCodeAt(i);
+            const blob = new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = data.filename || 'Акт.xlsx';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
             showNotification('Акт сформирован', 'success');
         } catch (e) {
             console.error(e);

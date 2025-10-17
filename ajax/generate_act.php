@@ -1,0 +1,174 @@
+<?php
+/**
+ * Генерация актов на сервере с сохранением стилей шаблона XLSX.
+ * Вход (POST JSON):
+ * {
+ *   "template": "giveing.xlsx|return.xlsx|sale.xlsx",
+ *   "items": [ { name, otherserial, serial, user_name }, ... ], // берём первые 6
+ *   "issuer_name": "...",  // ФИО выдающего (GLPI)
+ *   "user_name": "..."     // ФИО пользователя (из буфера)
+ * }
+ */
+
+// Поиск корня GLPI
+$glpi_root = '';
+for ($i = 0; $i < 5; $i++) {
+    $test_path = str_repeat('../', $i) . 'inc/includes.php';
+    if (file_exists($test_path)) {
+        $glpi_root = str_repeat('../', $i);
+        break;
+    }
+}
+if (empty($glpi_root)) {
+    $glpi_root = '../../../';
+}
+
+include ($glpi_root . "inc/includes.php");
+
+Session::checkLoginUser();
+
+header('Content-Type: application/json; charset=utf-8');
+
+// Читаем входные данные
+$input = json_decode(file_get_contents('php://input'), true);
+if (!$input || empty($input['template'])) {
+    echo json_encode(['success' => false, 'error' => 'Некорректные данные']);
+    exit;
+}
+
+$template = basename($input['template']);
+$items = isset($input['items']) && is_array($input['items']) ? $input['items'] : [];
+$issuerName = isset($input['issuer_name']) ? (string)$input['issuer_name'] : '';
+$userName = isset($input['user_name']) ? (string)$input['user_name'] : '';
+
+// Папка шаблонов
+$pluginDir = realpath(__DIR__ . '/..');
+$templatesDir = realpath($pluginDir . DIRECTORY_SEPARATOR . 'templates');
+if ($templatesDir === false) {
+    echo json_encode(['success' => false, 'error' => 'Каталог шаблонов не найден']);
+    exit;
+}
+
+$tplPath = realpath($templatesDir . DIRECTORY_SEPARATOR . $template);
+if ($tplPath === false || strpos($tplPath, $templatesDir) !== 0 || !preg_match('/\.xlsx$/i', $tplPath)) {
+    echo json_encode(['success' => false, 'error' => 'Шаблон не найден']);
+    exit;
+}
+
+// Готовим временную копию
+$tmpFile = tempnam(sys_get_temp_dir(), 'act_');
+if ($tmpFile === false) {
+    echo json_encode(['success' => false, 'error' => 'Не удалось создать временный файл']);
+    exit;
+}
+@unlink($tmpFile);
+$tmpFile .= '.xlsx';
+if (!copy($tplPath, $tmpFile)) {
+    echo json_encode(['success' => false, 'error' => 'Не удалось скопировать шаблон']);
+    exit;
+}
+
+// Координаты для заполнения
+$mapRows = [
+    'name' => ['col' => 'C', 'start' => 6, 'end' => 11],
+    'otherserial' => ['col' => 'G', 'start' => 6, 'end' => 11],
+    'serial' => ['col' => 'I', 'start' => 6, 'end' => 11],
+];
+
+$signCells = [];
+$low = strtolower($template);
+if (strpos($low, 'giveing') === 0) {
+    $signCells = ['issuer' => 'B26', 'user' => 'B28'];
+} elseif (strpos($low, 'return') === 0) {
+    $signCells = ['issuer' => 'B34', 'user' => 'B36'];
+} elseif (strpos($low, 'sale') === 0) {
+    $signCells = ['issuer' => 'B32', 'user' => 'B34'];
+}
+
+// Вспомогательные функции
+function xml_escape_text($text) {
+    return htmlspecialchars($text ?? '', ENT_QUOTES | ENT_XML1, 'UTF-8');
+}
+
+function replace_cell_inline(&$xml, $cellRef, $value) {
+    // Меняем содержимое ячейки на inlineStr, сохранив атрибуты/стили
+    $escaped = xml_escape_text($value);
+    $pattern = '/<c([^>]*)\br=\"' . preg_quote($cellRef, '/') . '\"([^>]*)>([\s\S]*?)<\/c>/';
+    $xml = preg_replace_callback($pattern, function ($m) use ($escaped) {
+        $attrs = $m[1] . $m[2];
+        // Удаляем существующие t="...", и добавим t="inlineStr"
+        $attrsOut = preg_replace('/\s+t=\"[^\"]*\"/i', '', $attrs);
+        $attrsOut .= ' t="inlineStr"';
+        // Сохраняем существующий s= стиль
+        // Внутренности ячейки заменяем на <is><t>...</t></is>
+        return '<c' . $attrsOut . '><is><t>' . $escaped . '</t></is></c>';
+    }, $xml, 1); // только первое совпадение
+}
+
+$zip = new ZipArchive();
+if ($zip->open($tmpFile) !== true) {
+    echo json_encode(['success' => false, 'error' => 'Не удалось открыть временный XLSX']);
+    exit;
+}
+
+$sheetPath = 'xl/worksheets/sheet1.xml';
+$idx = $zip->locateName($sheetPath, ZipArchive::FL_NODIR);
+if ($idx === false) {
+    $zip->close();
+    echo json_encode(['success' => false, 'error' => 'Лист sheet1 не найден']);
+    exit;
+}
+
+$sheetXml = $zip->getFromIndex($idx);
+if ($sheetXml === false) {
+    $zip->close();
+    echo json_encode(['success' => false, 'error' => 'Не удалось прочитать sheet1.xml']);
+    exit;
+}
+
+// Заполнение строк (первые 6 позиций)
+for ($i = 0; $i < 6; $i++) {
+    $row = $mapRows['name']['start'] + $i;
+    $item = isset($items[$i]) ? $items[$i] : null;
+    $nameVal = $item ? (string)($item['name'] ?? '') : '';
+    $invVal = $item ? (string)($item['otherserial'] ?? '') : '';
+    $serialVal = $item ? (string)($item['serial'] ?? '') : '';
+    replace_cell_inline($sheetXml, $mapRows['name']['col'] . $row, $nameVal);
+    replace_cell_inline($sheetXml, $mapRows['otherserial']['col'] . $row, $invVal);
+    replace_cell_inline($sheetXml, $mapRows['serial']['col'] . $row, $serialVal);
+}
+
+// Подписи
+if (!empty($signCells['issuer'])) {
+    replace_cell_inline($sheetXml, $signCells['issuer'], $issuerName);
+}
+if (!empty($signCells['user'])) {
+    replace_cell_inline($sheetXml, $signCells['user'], $userName);
+}
+
+// Сохраняем обратно в архив
+if (!$zip->addFromString($sheetPath, $sheetXml)) {
+    $zip->close();
+    echo json_encode(['success' => false, 'error' => 'Не удалось записать sheet1.xml']);
+    exit;
+}
+
+$zip->close();
+
+$content = file_get_contents($tmpFile);
+@unlink($tmpFile);
+
+$outName = 'Акт_' . date('Y-m-d') . '.xlsx';
+if (strpos($low, 'giveing') === 0) $outName = 'Акт_Выдачи_' . date('Y-m-d') . '.xlsx';
+elseif (strpos($low, 'return') === 0) $outName = 'Акт_Возврата_' . date('Y-m-d') . '.xlsx';
+elseif (strpos($low, 'sale') === 0) $outName = 'Акт_Выкупа_' . date('Y-m-d') . '.xlsx';
+
+echo json_encode([
+    'success' => true,
+    'filename' => $outName,
+    'content_base64' => base64_encode($content)
+]);
+
+?>
+
+
