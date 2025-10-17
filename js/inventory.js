@@ -896,7 +896,11 @@ loadColumnsConfig();
             }
             let html = '<div class="export-columns-list">';
             data.templates.forEach(t => {
-                html += `<div class="export-column-item"><button class="inventory-action-btn inventory-btn-primary" onclick="generateAct('${t.name}')">${t.name}</button></div>`;
+                let title = t.name;
+                if (t.name.toLowerCase().startsWith('giveing')) title = 'Акт Выдачи';
+                else if (t.name.toLowerCase().startsWith('return')) title = 'Акт Возврата';
+                else if (t.name.toLowerCase().startsWith('sale')) title = 'Акт Выкупа';
+                html += `<div class="export-column-item"><button class="inventory-action-btn inventory-btn-primary" onclick="generateAct('${t.name}')">${title}</button></div>`;
             });
             html += '</div>';
             container.innerHTML = html;
