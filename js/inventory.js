@@ -938,43 +938,55 @@ loadColumnsConfig();
             for (let i = 0; i < len; i++) bytes[i] = binary.charCodeAt(i);
             const wb = XLSX.read(bytes, { type: 'array', cellStyles: true });
 
-            // Подстановка для giveing.xlsx: C6-C11 name, G6-G11 otherserial, I6-I11 serial
-            // B26: текущий пользователь, B28: пользователь из буфера (берём из первой актуальной позиции)
+            // Главный лист шаблона (первый)
             const wsName = wb.SheetNames[0];
             const ws = wb.Sheets[wsName];
 
             // Собираем максимум 6 позиций
             const actualItems = itemsBuffer.filter(i => !i.isNotFound && !i.isDuplicate).slice(0, 6);
 
+            // Обновление ячейки без разрушения стилей/формул
             function setCell(addr, value) {
-                ws[addr] = ws[addr] || {};
-                ws[addr].v = value == null ? '' : String(value);
-                ws[addr].t = 's';
+                const existing = ws[addr] || {};
+                const styleBackup = existing.s; // сохраняем стиль
+                existing.v = value == null ? '' : String(value);
+                existing.t = 's';
+                if (styleBackup) existing.s = styleBackup;
+                ws[addr] = existing;
             }
 
-            for (let i = 0; i < 6; i++) {
-                const row = 6 + i;
-                const item = actualItems[i];
-                setCell(`C${row}`, item ? (item.name || '') : '');
-                setCell(`G${row}`, item ? (item.otherserial || '') : '');
-                setCell(`I${row}`, item ? (item.serial || '') : '');
+            const tpl = (templateName || '').toLowerCase();
+
+            if (tpl.startsWith('giveing')) {
+                // C6-C11: Наименования; G6-G11: Инв; I6-I11: Серийные
+                for (let i = 0; i < 6; i++) {
+                    const row = 6 + i;
+                    const item = actualItems[i];
+                    setCell(`C${row}`, item ? (item.name || '') : '');
+                    setCell(`G${row}`, item ? (item.otherserial || '') : '');
+                    setCell(`I${row}`, item ? (item.serial || '') : '');
+                }
+                if (typeof GLPI_CURRENT_USER_NAME !== 'undefined') setCell('B26', GLPI_CURRENT_USER_NAME || '');
+                const first = actualItems[0];
+                if (first && first.user_name) setCell('B28', first.user_name);
+            } else if (tpl.startsWith('return')) {
+                // Возврат: только подписи
+                if (typeof GLPI_CURRENT_USER_NAME !== 'undefined') setCell('B34', GLPI_CURRENT_USER_NAME || '');
+                const first = actualItems[0];
+                if (first && first.user_name) setCell('B36', first.user_name);
+            } else if (tpl.startsWith('sale')) {
+                // Выкуп: только подписи
+                if (typeof GLPI_CURRENT_USER_NAME !== 'undefined') setCell('B32', GLPI_CURRENT_USER_NAME || '');
+                const first = actualItems[0];
+                if (first && first.user_name) setCell('B34', first.user_name);
             }
 
-            // ФИО выдающего (текущий пользователь из GLPI)
-            if (typeof GLPI_CURRENT_USER_NAME !== 'undefined') {
-                setCell('B26', GLPI_CURRENT_USER_NAME || '');
-            }
+            // Имя файла в зависимости от шаблона
+            let filename = `Акт_${new Date().toISOString().slice(0,10)}.xlsx`;
+            if (tpl.startsWith('giveing')) filename = `Акт_Выдачи_${new Date().toISOString().slice(0,10)}.xlsx`;
+            else if (tpl.startsWith('return')) filename = `Акт_Возврата_${new Date().toISOString().slice(0,10)}.xlsx`;
+            else if (tpl.startsWith('sale')) filename = `Акт_Выкупа_${new Date().toISOString().slice(0,10)}.xlsx`;
 
-            // ФИО пользователя из буфера: берём из первой актуальной записи поле user_name
-            const first = actualItems[0];
-            if (first && first.user_name) {
-                setCell('B28', first.user_name);
-            }
-
-            // Обновляем диапазон листа
-            if (!ws['!ref']) ws['!ref'] = 'A1:K40';
-
-            const filename = `Акт_Выдачи_${new Date().toISOString().slice(0,10)}.xlsx`;
             XLSX.writeFile(wb, filename);
             showNotification('Акт сформирован', 'success');
         } catch (e) {
