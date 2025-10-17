@@ -595,6 +595,7 @@ loadColumnsConfig();
                         <option value="contact">Стеллаж</option>
                         <option value="location_name">Местоположение</option>
                         <option value="user_name">Пользователь</option>
+                        <option value="comment_append">Комментарий (добавить)</option>
                     </select>
                     ${ruleIndex > 0 ? `<button class="rule-remove-btn" onclick="removeRule(${ruleIndex})" title="Удалить правило">
                         <i class="fas fa-times"></i>
@@ -621,9 +622,9 @@ loadColumnsConfig();
         }
         
         // Для стеллажа - просто текстовое поле
-        if (fieldType === 'contact') {
+        if (fieldType === 'contact' || fieldType === 'comment_append') {
             valueContainer.innerHTML = `
-                <input type="text" class="rule-value-input" placeholder="Введите номер стеллажа">
+                <input type="text" class="rule-value-input" placeholder="${fieldType==='comment_append' ? 'Текст для добавления в комментарий' : 'Введите номер стеллажа'}">
             `;
             return;
         }

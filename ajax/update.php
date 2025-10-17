@@ -104,6 +104,15 @@ foreach ($items as $item) {
                     $updateData['contact'] = $value;
                 }
                 break;
+            case 'comment_append':
+                if ($value !== null) {
+                    $current = isset($itemClass->fields['comment']) ? (string)$itemClass->fields['comment'] : '';
+                    $append = (string)$value;
+                    if ($append !== '') {
+                        $updateData['comment'] = $current === '' ? $append : ($current . "\n" . $append);
+                    }
+                }
+                break;
         }
     }
     
