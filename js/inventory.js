@@ -38,11 +38,16 @@ document.addEventListener('DOMContentLoaded', function() {
         lastTs: 0,
         minIntervalMs: 120
     };
+    let soundEnabled = (function(){
+        const v = localStorage.getItem('inventory_sound_enabled');
+        return v === null ? true : v !== 'false';
+    })();
     function playTone(frequency, durationMs) {
         try {
             const now = Date.now();
             if (now - audioState.lastTs < audioState.minIntervalMs) return;
             audioState.lastTs = now;
+            if (!soundEnabled) return;
             if (!AudioCtx) return;
             if (!audioState.ctx) audioState.ctx = new AudioCtx();
             const ctx = audioState.ctx;
@@ -50,7 +55,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const gain = ctx.createGain();
             osc.type = 'sine';
             osc.frequency.setValueAtTime(frequency, ctx.currentTime);
-            gain.gain.value = 0.08; // тихий звук
+            gain.gain.value = 0.35; // высокая громкость
             osc.connect(gain);
             gain.connect(ctx.destination);
             const t0 = ctx.currentTime;
@@ -63,6 +68,13 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     function playSuccess() { playTone(880, 120); }
     function playError() { playTone(220, 150); }
+
+    window.toggleSound = function() {
+        soundEnabled = !soundEnabled;
+        try { localStorage.setItem('inventory_sound_enabled', soundEnabled ? 'true' : 'false'); } catch(e){}
+        renderBuffer();
+        showNotification('Звук: ' + (soundEnabled ? 'включен' : 'выключен'), 'info');
+    }
 
 // Загрузить настройки столбцов из localStorage
 function loadColumnsConfig() {
@@ -451,11 +463,15 @@ loadColumnsConfig();
             headersHtml += `<th>${col.name}</th>`;
         });
         
+        const soundIcon = soundEnabled ? 'fa-volume-up' : 'fa-volume-mute';
         let html = `
             <div class="inventory-buffer-container">
                 <div class="inventory-buffer-header">
                     <h3>В буфере: <span class="buffer-count">${itemsBuffer.length}</span>; Актуальных: <span class="actual-count">${uniqueActualCount}</span></h3>
                     <div class="inventory-buffer-actions">
+                        <button class="inventory-action-btn inventory-btn-secondary" onclick="toggleSound()" title="Звук">
+                            <i class="fas ${soundIcon}"></i>
+                        </button>
                         <button class="inventory-action-btn inventory-btn-primary" onclick="keepActualItems()">
                             <i class="fas fa-filter"></i> Оставить актуальные
                         </button>
