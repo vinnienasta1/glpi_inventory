@@ -35,7 +35,7 @@ if (!$input || empty($input['template'])) {
     exit;
 }
 
-$tpl = strtolower(trim($input['template']));
+$tpl = trim($input['template']);
 $items = isset($input['items']) && is_array($input['items']) ? $input['items'] : [];
 $issuer = isset($input['issuer_name']) ? (string)$input['issuer_name'] : '';
 $user = isset($input['user_name']) ? (string)$input['user_name'] : '';
@@ -50,54 +50,87 @@ if ($issuer === '') {
     }
 }
 
-$title = 'Акт';
-if (strpos($tpl, 'giveing') === 0 || $tpl === 'giveing') $title = 'Акт Выдачи';
-elseif (strpos($tpl, 'return') === 0 || $tpl === 'return') $title = 'Акт Возврата';
-elseif (strpos($tpl, 'sale') === 0 || $tpl === 'sale') $title = 'Акт Выкупа';
-
-function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
-
-$rows = '';
-for ($i = 0; $i < 6; $i++) {
-    $it = isset($items[$i]) ? $items[$i] : null;
-    $rows .= '<tr>'
-        . '<td>' . h($it ? ($it['name'] ?? '') : '') . '</td>'
-        . '<td>' . h($it ? ($it['otherserial'] ?? '') : '') . '</td>'
-        . '<td>' . h($it ? ($it['serial'] ?? '') : '') . '</td>'
-        . '</tr>';
+// Определяем файл шаблона
+$tplLower = strtolower($tpl);
+if (!preg_match('/\.html$/i', $tplLower)) {
+    // Разрешаем ключи вида giveing|return|sale
+    $tplLower = $tplLower . '.html';
 }
 
-$date = date('d.m.Y');
+$pluginDir = realpath(__DIR__ . '/..');
+$templatesDir = realpath($pluginDir . DIRECTORY_SEPARATOR . 'templates');
+$tplPath = realpath($templatesDir . DIRECTORY_SEPARATOR . basename($tplLower));
+if ($tplPath === false || strpos($tplPath, $templatesDir) !== 0 || !is_file($tplPath)) {
+    echo json_encode(['success' => false, 'error' => 'HTML шаблон не найден']);
+    exit;
+}
 
-$html = '<!DOCTYPE html>'
-    . '<html><head><meta charset="utf-8"><title>' . h($title) . '</title>'
-    . '<style>'
-    . 'body{font-family:Arial,Helvetica,sans-serif;margin:20px;color:#000;}'
-    . 'h1{font-size:20px;margin:0 0 10px 0;}'
-    . 'table{width:100%;border-collapse:collapse;margin-top:10px;}'
-    . 'th,td{border:1px solid #000;padding:6px;font-size:13px;}'
-    . '.meta{margin-top:15px;font-size:14px;}'
-    . '.signs{margin-top:40px;display:flex;gap:40px;}'
-    . '.sign{flex:1;}'
-    . '@media print{.no-print{display:none}}'
-    . '</style>'
-    . '</head><body>'
-    . '<div class="no-print" style="text-align:right;margin-bottom:10px">'
-    . '<button onclick="window.print()" style="padding:6px 10px">Печать</button>'
-    . '</div>'
-    . '<h1>' . h($title) . '</h1>'
-    . '<div class="meta">Дата: ' . h($date) . '</div>'
-    . '<table>'
-    . '<thead><tr><th>Наименование</th><th>Инв. номер</th><th>Серийный номер</th></tr></thead>'
-    . '<tbody>' . $rows . '</tbody>'
-    . '</table>'
-    . '<div class="signs">'
-    . '<div class="sign">Выдающий: <strong>' . h($issuer) . '</strong></div>'
-    . '<div class="sign">Пользователь: <strong>' . h($user) . '</strong></div>'
-    . '</div>'
-    . '</body></html>';
+$rawHtml = file_get_contents($tplPath);
+if ($rawHtml === false) {
+    echo json_encode(['success' => false, 'error' => 'Не удалось прочитать HTML шаблон']);
+    exit;
+}
 
-echo json_encode(['success' => true, 'html' => $html, 'title' => $title]);
+// Парсим HTML и подставляем данные
+$dom = new DOMDocument('1.0', 'UTF-8');
+libxml_use_internal_errors(true);
+$dom->loadHTML('<?xml encoding="utf-8" ?>' . $rawHtml, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+libxml_clear_errors();
+$xpath = new DOMXPath($dom);
+
+// Первый table: заполняем 6 строк (после заголовка)
+$rows = $xpath->query('(//table)[1]//tr');
+if ($rows && $rows->length > 1) {
+    for ($i = 0; $i < 6; $i++) {
+        $rowIndex = 1 + $i; // 0 — это заголовок
+        if ($rowIndex >= $rows->length) break;
+        $tr = $rows->item($rowIndex);
+        if (!$tr) continue;
+        $tds = $tr->getElementsByTagName('td');
+        $item = isset($items[$i]) ? $items[$i] : null;
+        if ($tds->length >= 4) {
+            // ожидаем: td[0]=№, td[1]=name (colspan=3), td[2]=inv, td[3]=serial
+            if ($item) {
+                $tds->item(1)->nodeValue = (string)($item['name'] ?? '');
+                $tds->item(2)->nodeValue = (string)($item['otherserial'] ?? '');
+                $tds->item(3)->nodeValue = (string)($item['serial'] ?? '');
+            } else {
+                $tds->item(1)->nodeValue = '';
+                $tds->item(2)->nodeValue = '';
+                $tds->item(3)->nodeValue = '';
+            }
+        }
+    }
+}
+
+// Подписи: ищем в блоке .signature соответствующие строки
+$signPs = $xpath->query("//div[contains(concat(' ', normalize-space(@class), ' '), ' signature ')]//p");
+if ($signPs) {
+    foreach ($signPs as $p) {
+        $text = trim($p->textContent);
+        if (mb_stripos($text, 'Сотрудник') !== false) {
+            while ($p->firstChild) { $p->removeChild($p->firstChild); }
+            $p->appendChild($dom->createTextNode('Сотрудник ДИТ: '));
+            $strong = $dom->createElement('strong', $issuer);
+            $p->appendChild($strong);
+        } elseif (mb_stripos($text, 'Получатель') !== false) {
+            while ($p->firstChild) { $p->removeChild($p->firstChild); }
+            $p->appendChild($dom->createTextNode('Получатель техники: '));
+            $strong = $dom->createElement('strong', $user);
+            $p->appendChild($strong);
+        }
+    }
+}
+
+$finalHtml = $dom->saveHTML();
+
+// Заголовок для удобства
+$title = 'Акт';
+if (strpos(basename($tplPath), 'giveing') === 0) $title = 'Акт Выдачи';
+elseif (strpos(basename($tplPath), 'return') === 0) $title = 'Акт Возврата';
+elseif (strpos(basename($tplPath), 'sale') === 0) $title = 'Акт Выкупа';
+
+echo json_encode(['success' => true, 'html' => $finalHtml, 'title' => $title]);
 
 ?>
 
