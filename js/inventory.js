@@ -423,6 +423,9 @@ loadColumnsConfig();
                         <button class="inventory-action-btn inventory-btn-warning" onclick="showBulkEditModal()">
                             <i class="fas fa-edit"></i> Изменить
                         </button>
+                        <button class="inventory-action-btn inventory-btn-success" onclick="showActsModal()">
+                            <i class="fas fa-file-signature"></i> Акты
+                        </button>
                         <!-- removed old Export button -->
                         <!-- removed old Import button -->
                         <button class="inventory-action-btn inventory-btn-info" onclick="showColumnsModal()">
@@ -832,6 +835,123 @@ loadColumnsConfig();
         
         document.body.insertAdjacentHTML('beforeend', modalHtml);
         initColumnsDragAndDrop();
+    }
+
+    // ======================
+    // МОДАЛ ДЛЯ АКТОВ
+    // ======================
+    window.showActsModal = function() {
+        const actualItems = itemsBuffer.filter(item => !item.isNotFound);
+        if (actualItems.length === 0) {
+            showNotification('В буфере нет позиций для акта', 'warning');
+            return;
+        }
+
+        const modalHtml = `
+            <div class="inventory-modal-overlay" onclick="closeActsModal()">
+                <div class="inventory-modal" onclick="event.stopPropagation()">
+                    <div class="inventory-modal-header">
+                        <h3><i class="fas fa-file-signature"></i> Печать актов</h3>
+                        <button class="inventory-modal-close" onclick="closeActsModal()">&times;</button>
+                    </div>
+                    <div class="inventory-modal-body">
+                        <div id="acts-templates-list">Загрузка шаблонов...</div>
+                    </div>
+                    <div class="inventory-modal-footer">
+                        <button class="inventory-action-btn inventory-btn-secondary" onclick="closeActsModal()">Отмена</button>
+                    </div>
+                </div>
+            </div>`;
+
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        loadActsTemplates();
+    }
+
+    window.closeActsModal = function() {
+        const modal = document.querySelector('.inventory-modal-overlay');
+        if (modal) modal.remove();
+    }
+
+    function loadActsTemplates() {
+        const headers = {};
+        if (typeof GLPI_CSRF_TOKEN !== 'undefined') {
+            headers['X-Glpi-Csrf-Token'] = GLPI_CSRF_TOKEN;
+        }
+        fetch('/plugins/inventory/ajax/templates.php?action=list', {
+            method: 'GET',
+            headers: headers,
+            credentials: 'same-origin'
+        })
+        .then(r => r.json())
+        .then(data => {
+            const container = document.getElementById('acts-templates-list');
+            if (!container) return;
+            if (!data.success) {
+                container.textContent = 'Ошибка: ' + (data.error || 'Не удалось загрузить шаблоны');
+                return;
+            }
+            if (!data.templates || data.templates.length === 0) {
+                container.textContent = 'Шаблоны не найдены';
+                return;
+            }
+            let html = '<div class="export-columns-list">';
+            data.templates.forEach(t => {
+                html += `<div class="export-column-item"><button class="inventory-action-btn inventory-btn-primary" onclick="generateAct('${t.name}')">${t.name}</button></div>`;
+            });
+            html += '</div>';
+            container.innerHTML = html;
+        })
+        .catch(err => {
+            const container = document.getElementById('acts-templates-list');
+            if (container) container.textContent = 'Ошибка загрузки шаблонов';
+        });
+    }
+
+    // Генерация акта: скачиваем шаблон, подставляем данные (простая вкладка XLSX через SheetJS), сохраняем
+    window.generateAct = async function(templateName) {
+        try {
+            const headers = {};
+            if (typeof GLPI_CSRF_TOKEN !== 'undefined') {
+                headers['X-Glpi-Csrf-Token'] = GLPI_CSRF_TOKEN;
+            }
+            const resp = await fetch(`/plugins/inventory/ajax/templates.php?action=get&name=${encodeURIComponent(templateName)}`, {
+                method: 'GET',
+                headers: headers,
+                credentials: 'same-origin'
+            });
+            const data = await resp.json();
+            if (!data.success) {
+                showNotification('Не удалось получить шаблон: ' + (data.error || ''), 'error');
+                return;
+            }
+            if (typeof XLSX === 'undefined') {
+                showNotification('Библиотека XLSX не загружена', 'error');
+                return;
+            }
+            const binary = atob(data.content_base64);
+            const len = binary.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) bytes[i] = binary.charCodeAt(i);
+            const wb = XLSX.read(bytes, { type: 'array' });
+
+            // Простая подстановка: создаём второй лист "Данные" с выгрузкой буфера
+            const actualItems = itemsBuffer.filter(i => !i.isNotFound && !i.isDuplicate);
+            const visibleColumns = getVisibleColumns();
+            const aoa = [visibleColumns.map(c => c.name)];
+            actualItems.forEach(it => {
+                aoa.push(visibleColumns.map(c => (""+ (getCellValueForExport ? getCellValueForExport(it, c.key) : (it[c.key]||'')))));
+            });
+            const wsData = XLSX.utils.aoa_to_sheet(aoa);
+            XLSX.utils.book_append_sheet(wb, wsData, 'Данные');
+
+            // Скачиваем с новым именем
+            const filename = `act_${new Date().toISOString().slice(0,10)}_${templateName}`;
+            XLSX.writeFile(wb, filename);
+            showNotification('Акт сформирован', 'success');
+        } catch (e) {
+            console.error(e);
+            showNotification('Ошибка формирования акта', 'error');
+        }
     }
     
     // Инициализация drag-and-drop
