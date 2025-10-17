@@ -900,7 +900,12 @@ loadColumnsConfig();
                 if (t.name.toLowerCase().startsWith('giveing')) title = 'Акт Выдачи';
                 else if (t.name.toLowerCase().startsWith('return')) title = 'Акт Возврата';
                 else if (t.name.toLowerCase().startsWith('sale')) title = 'Акт Выкупа';
-                html += `<div class="export-column-item"><button class="inventory-action-btn inventory-btn-primary" onclick="generateAct('${t.name}')">${title}</button></div>`;
+                html += `<div class="export-column-item">
+                    <div style="display:flex;gap:8px;flex-wrap:wrap">
+                        <button class="inventory-action-btn inventory-btn-primary" onclick="generateAct('${t.name}')">${title} (XLSX)</button>
+                        <button class="inventory-action-btn inventory-btn-secondary" onclick="generateActHTML('${t.name.split('.')[0]}')">${title} (HTML)</button>
+                    </div>
+                </div>`;
             });
             html += '</div>';
             container.innerHTML = html;
@@ -962,6 +967,35 @@ loadColumnsConfig();
         } catch (e) {
             console.error(e);
             showNotification('Ошибка формирования акта', 'error');
+        }
+    }
+
+    // Генерация акта в HTML для печати
+    window.generateActHTML = async function(templateKey) {
+        try {
+            const headers = { 'Content-Type': 'application/json' };
+            if (typeof GLPI_CSRF_TOKEN !== 'undefined') headers['X-Glpi-Csrf-Token'] = GLPI_CSRF_TOKEN;
+            const actualItems = itemsBuffer.filter(i => !i.isNotFound && !i.isDuplicate).slice(0, 6);
+            const first = actualItems[0];
+            const issuer = (typeof GLPI_CURRENT_USER_NAME !== 'undefined' ? GLPI_CURRENT_USER_NAME : '') || '';
+            const userName = first && first.user_name ? first.user_name : '';
+            const payload = {
+                template: templateKey,
+                items: actualItems.map(it => ({ name: it.name || '', otherserial: it.otherserial || '', serial: it.serial || '', user_name: it.user_name || '' })),
+                issuer_name: issuer,
+                user_name: userName
+            };
+            const resp = await fetch('/plugins/inventory/ajax/generate_act_html.php', {
+                method: 'POST', headers, body: JSON.stringify(payload), credentials: 'same-origin'
+            });
+            const data = await resp.json();
+            if (!data.success) { showNotification('Ошибка генерации HTML: ' + (data.error || ''), 'error'); return; }
+            const w = window.open('', '_blank');
+            w.document.write(data.html);
+            w.document.close();
+        } catch (e) {
+            console.error(e);
+            showNotification('Ошибка генерации HTML', 'error');
         }
     }
     
