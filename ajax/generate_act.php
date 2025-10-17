@@ -111,18 +111,68 @@ if ($zip->open($tmpFile) !== true) {
     exit;
 }
 
-$sheetPath = 'xl/worksheets/sheet1.xml';
-$idx = $zip->locateName($sheetPath, ZipArchive::FL_NODIR);
-if ($idx === false) {
+$desiredSheetName = 'Лист1';
+
+// Определяем фактический путь к первому листу (или к листу по имени)
+$workbookPath = 'xl/workbook.xml';
+$relsPath = 'xl/_rels/workbook.xml.rels';
+$sheetPath = null;
+
+$workbookXml = $zip->getFromName($workbookPath);
+if ($workbookXml !== false) {
+    // Собираем список листов: name + r:id + sheetId + order
+    $sheets = [];
+    if (preg_match_all('/<sheet[^>]*name=\"([^\"]+)\"[^>]*r:id=\"([^\"]+)\"[^>]*>/i', $workbookXml, $mm, PREG_SET_ORDER)) {
+        foreach ($mm as $i => $m) {
+            $sheets[] = [
+                'name' => $m[1],
+                'rid' => $m[2],
+                'order' => $i
+            ];
+        }
+    }
+
+    // Разрешаем выбор по имени (Лист1) или берём первый
+    $targetRid = null;
+    foreach ($sheets as $s) {
+        if ($s['name'] === $desiredSheetName) { $targetRid = $s['rid']; break; }
+    }
+    if ($targetRid === null && !empty($sheets)) {
+        $targetRid = $sheets[0]['rid'];
+    }
+
+    // Находим Target по rId
+    if ($targetRid) {
+        $relsXml = $zip->getFromName($relsPath);
+        if ($relsXml !== false && preg_match('/<Relationship[^>]*Id=\"'.preg_quote($targetRid,'/').'\"[^>]*Target=\"([^\"]+)\"/i', $relsXml, $rm)) {
+            $target = $rm[1]; // например, worksheets/sheet1.xml
+            $candidate = 'xl/' . ltrim($target, '/');
+            if ($zip->locateName($candidate, ZipArchive::FL_NODIR) !== false) {
+                $sheetPath = $candidate;
+            }
+        }
+    }
+}
+
+// Fallback: первый xml в xl/worksheets/
+if ($sheetPath === null) {
+    for ($i = 1; $i <= 20; $i++) {
+        $candidate = 'xl/worksheets/sheet' . $i . '.xml';
+        if ($zip->locateName($candidate, ZipArchive::FL_NODIR) !== false) { $sheetPath = $candidate; break; }
+    }
+}
+
+if ($sheetPath === null) {
     $zip->close();
-    echo json_encode(['success' => false, 'error' => 'Лист sheet1 не найден']);
+    echo json_encode(['success' => false, 'error' => 'Лист не найден']);
     exit;
 }
 
+$idx = $zip->locateName($sheetPath, ZipArchive::FL_NODIR);
 $sheetXml = $zip->getFromIndex($idx);
 if ($sheetXml === false) {
     $zip->close();
-    echo json_encode(['success' => false, 'error' => 'Не удалось прочитать sheet1.xml']);
+    echo json_encode(['success' => false, 'error' => 'Не удалось прочитать worksheet']);
     exit;
 }
 
@@ -149,7 +199,7 @@ if (!empty($signCells['user'])) {
 // Сохраняем обратно в архив
 if (!$zip->addFromString($sheetPath, $sheetXml)) {
     $zip->close();
-    echo json_encode(['success' => false, 'error' => 'Не удалось записать sheet1.xml']);
+    echo json_encode(['success' => false, 'error' => 'Не удалось записать worksheet']);
     exit;
 }
 
