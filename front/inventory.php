@@ -14,9 +14,18 @@ Html::header('Инвенторизация', $_SERVER['PHP_SELF'], "tools", "Plu
 // Подключаем CSS и JS
 echo "<link rel='stylesheet' type='text/css' href='/plugins/inventory/css/inventory.css?v=" . time() . "'>";
 
-// Передаем CSRF токен в JavaScript ПРАВИЛЬНО
+// Передаем CSRF токен и ФИО текущего пользователя в JavaScript
 echo "<script>";
 echo "var GLPI_CSRF_TOKEN = '" . Session::getNewCSRFToken() . "';";
+$__user_name_js = '';
+$__uid = Session::getLoginUserID();
+if ($__uid) {
+    $u = new User();
+    if ($u->getFromDB($__uid)) {
+        $__user_name_js = trim(($u->fields['realname'] ?? '') . ' ' . ($u->fields['firstname'] ?? ''));
+    }
+}
+echo "var GLPI_CURRENT_USER_NAME = '" . Html::cleanInputText($__user_name_js) . "';";
 echo "</script>";
 
 echo "<script src='/plugins/inventory/js/inventory.js?v=" . time() . "'></script>";

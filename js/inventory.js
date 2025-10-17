@@ -936,20 +936,45 @@ loadColumnsConfig();
             const len = binary.length;
             const bytes = new Uint8Array(len);
             for (let i = 0; i < len; i++) bytes[i] = binary.charCodeAt(i);
-            const wb = XLSX.read(bytes, { type: 'array' });
+            const wb = XLSX.read(bytes, { type: 'array', cellStyles: true });
 
-            // Простая подстановка: создаём второй лист "Данные" с выгрузкой буфера
-            const actualItems = itemsBuffer.filter(i => !i.isNotFound && !i.isDuplicate);
-            const visibleColumns = getVisibleColumns();
-            const aoa = [visibleColumns.map(c => c.name)];
-            actualItems.forEach(it => {
-                aoa.push(visibleColumns.map(c => (""+ (getCellValueForExport ? getCellValueForExport(it, c.key) : (it[c.key]||'')))));
-            });
-            const wsData = XLSX.utils.aoa_to_sheet(aoa);
-            XLSX.utils.book_append_sheet(wb, wsData, 'Данные');
+            // Подстановка для giveing.xlsx: C6-C11 name, G6-G11 otherserial, I6-I11 serial
+            // B26: текущий пользователь, B28: пользователь из буфера (берём из первой актуальной позиции)
+            const wsName = wb.SheetNames[0];
+            const ws = wb.Sheets[wsName];
 
-            // Скачиваем с новым именем
-            const filename = `act_${new Date().toISOString().slice(0,10)}_${templateName}`;
+            // Собираем максимум 6 позиций
+            const actualItems = itemsBuffer.filter(i => !i.isNotFound && !i.isDuplicate).slice(0, 6);
+
+            function setCell(addr, value) {
+                ws[addr] = ws[addr] || {};
+                ws[addr].v = value == null ? '' : String(value);
+                ws[addr].t = 's';
+            }
+
+            for (let i = 0; i < 6; i++) {
+                const row = 6 + i;
+                const item = actualItems[i];
+                setCell(`C${row}`, item ? (item.name || '') : '');
+                setCell(`G${row}`, item ? (item.otherserial || '') : '');
+                setCell(`I${row}`, item ? (item.serial || '') : '');
+            }
+
+            // ФИО выдающего (текущий пользователь из GLPI)
+            if (typeof GLPI_CURRENT_USER_NAME !== 'undefined') {
+                setCell('B26', GLPI_CURRENT_USER_NAME || '');
+            }
+
+            // ФИО пользователя из буфера: берём из первой актуальной записи поле user_name
+            const first = actualItems[0];
+            if (first && first.user_name) {
+                setCell('B28', first.user_name);
+            }
+
+            // Обновляем диапазон листа
+            if (!ws['!ref']) ws['!ref'] = 'A1:K40';
+
+            const filename = `Акт_Выдачи_${new Date().toISOString().slice(0,10)}.xlsx`;
             XLSX.writeFile(wb, filename);
             showNotification('Акт сформирован', 'success');
         } catch (e) {
