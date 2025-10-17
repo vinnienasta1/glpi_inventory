@@ -1104,6 +1104,7 @@ window.showExportModal = function(type) {
     };
     
     const visibleColumns = getVisibleColumns();
+    const defaultName = 'inventory_export_' + new Date().toISOString().slice(0,10);
     
     const modal = document.createElement('div');
     modal.className = 'inventory-modal-overlay';
@@ -1115,6 +1116,10 @@ window.showExportModal = function(type) {
             </div>
             <div class="inventory-modal-body">
                 <div class="export-settings">
+                    <div class="inventory-form-group">
+                        <label for="export-filename">Название файла</label>
+                        <input type="text" id="export-filename" value="${defaultName}" />
+                    </div>
                     <h4>Выберите столбцы для экспорта:</h4>
                     <div class="export-columns-list">
                         ${visibleColumns.map(col => `
@@ -1177,6 +1182,8 @@ window.performExport = function(type) {
     
     const includeNotFound = document.getElementById('export-include-notfound').checked;
     const includeDuplicates = document.getElementById('export-include-duplicates').checked;
+    const filenameInput = document.getElementById('export-filename');
+    const filenameBase = filenameInput && filenameInput.value.trim() ? filenameInput.value.trim() : 'inventory_export';
     
     // Фильтруем данные
     let dataToExport = itemsBuffer.filter(item => {
@@ -1195,10 +1202,10 @@ window.performExport = function(type) {
     
     switch (type) {
         case 'csv':
-            exportToCSVFile(dataToExport, selectedColumns);
+            exportToCSVFile(dataToExport, selectedColumns, filenameBase);
             break;
         case 'excel':
-            exportToExcelFile(dataToExport, selectedColumns);
+            exportToExcelFile(dataToExport, selectedColumns, filenameBase);
             break;
         case 'report':
             generatePrintReport(dataToExport, selectedColumns);
@@ -1244,7 +1251,7 @@ window.getCellValueForExport = function(item, columnKey) {
 }
 
 // Экспорт в CSV файл
-window.exportToCSVFile = function(data, columns) {
+window.exportToCSVFile = function(data, columns, filenameBase = 'inventory_export') {
     const headers = columns.map(col => col.name);
     const csvContent = [
         headers.join(','),
@@ -1260,12 +1267,13 @@ window.exportToCSVFile = function(data, columns) {
         )
     ].join('\n');
     
-    downloadFile(csvContent, 'inventory_export.csv', 'text/csv;charset=utf-8;');
+    const safeName = filenameBase.replace(/[^\w\-\.]+/g, '_');
+    downloadFile(csvContent, (safeName || 'inventory_export') + '.csv', 'text/csv;charset=utf-8;');
     showNotification(`Экспортировано ${data.length} позиций в CSV файл`, 'success');
 }
 
 // Экспорт в Excel файл (используем CSV с BOM для корректного отображения в Excel)
-window.exportToExcelFile = function(data, columns) {
+window.exportToExcelFile = function(data, columns, filenameBase = 'inventory_export') {
     const headers = columns.map(col => col.name);
     const csvContent = [
         headers.join('\t'),
@@ -1280,7 +1288,8 @@ window.exportToExcelFile = function(data, columns) {
     
     // Добавляем BOM для корректного отображения кириллицы в Excel
     const bom = '\uFEFF';
-    downloadFile(bom + csvContent, 'inventory_export.xls', 'application/vnd.ms-excel;charset=utf-8;');
+    const safeName = filenameBase.replace(/[^\w\-\.]+/g, '_');
+    downloadFile(bom + csvContent, (safeName || 'inventory_export') + '.xls', 'application/vnd.ms-excel;charset=utf-8;');
     showNotification(`Экспортировано ${data.length} позиций в Excel файл`, 'success');
 }
 
