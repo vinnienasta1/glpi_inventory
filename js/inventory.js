@@ -31,6 +31,39 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
 
+    // Аудио-обратная связь при добавлении в буфер
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    const audioState = {
+        ctx: null,
+        lastTs: 0,
+        minIntervalMs: 120
+    };
+    function playTone(frequency, durationMs) {
+        try {
+            const now = Date.now();
+            if (now - audioState.lastTs < audioState.minIntervalMs) return;
+            audioState.lastTs = now;
+            if (!AudioCtx) return;
+            if (!audioState.ctx) audioState.ctx = new AudioCtx();
+            const ctx = audioState.ctx;
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(frequency, ctx.currentTime);
+            gain.gain.value = 0.08; // тихий звук
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            const t0 = ctx.currentTime;
+            const t1 = t0 + durationMs / 1000;
+            osc.start(t0);
+            osc.stop(t1);
+        } catch (e) {
+            // игнорируем аудио-ошибки
+        }
+    }
+    function playSuccess() { playTone(880, 120); }
+    function playError() { playTone(220, 150); }
+
 // Загрузить настройки столбцов из localStorage
 function loadColumnsConfig() {
     const saved = localStorage.getItem('inventory_columns_config');
@@ -261,6 +294,7 @@ loadColumnsConfig();
         
         itemsBuffer.unshift(notFoundItem);
         renderBuffer();
+        playError();
     }
     
     // Добавление элемента в буфер
@@ -281,6 +315,11 @@ loadColumnsConfig();
         
         // Добавляем в начало буфера (новые сверху)
         itemsBuffer.unshift(bufferItem);
+        if (bufferItem.isDuplicate) {
+            playError();
+        } else {
+            playSuccess();
+        }
     }
     
     // Показать модальное окно выбора из множественных результатов
