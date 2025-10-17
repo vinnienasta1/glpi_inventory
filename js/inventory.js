@@ -997,9 +997,12 @@ loadColumnsConfig();
             });
             const data = await resp.json();
             if (!data.success) { showNotification('Ошибка генерации HTML: ' + (data.error || ''), 'error'); return; }
+            // Генерация PDF через print — открываем окно и вызываем печать
             const w = window.open('', '_blank');
             w.document.write(data.html);
             w.document.close();
+            // Даём браузеру отрисовать, затем вызываем диалог печати (пользователь может сохранить как PDF)
+            setTimeout(() => { try { w.print(); } catch(e){} }, 300);
         } catch (e) {
             console.error(e);
             showNotification('Ошибка генерации HTML', 'error');
