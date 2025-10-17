@@ -169,7 +169,9 @@ if (strpos(basename($tplPath), 'giveing') === 0) $title = 'Акт Выдачи';
 elseif (strpos(basename($tplPath), 'return') === 0) $title = 'Акт Возврата';
 elseif (strpos(basename($tplPath), 'sale') === 0) $title = 'Акт Выкупа';
 
-echo json_encode(['success' => true, 'html' => $finalHtml, 'title' => $title]);
+// Добавляем минимальные рекомендации для печати (убрать поля страницы)
+$printCss = "<style>@page{size:A4;margin:0}body{margin:0}</style>";
+echo json_encode(['success' => true, 'html' => $printCss . $finalHtml, 'title' => $title]);
 
 ?>
 
