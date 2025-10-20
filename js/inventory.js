@@ -1067,7 +1067,16 @@ loadColumnsConfig();
                 const when = l.when || '-';
                 const count = (l.items||[]).length;
                 const id = l.id || '';
-                return `<tr><td>${when}</td><td>${count}</td><td><button class="inventory-action-btn inventory-btn-secondary" onclick="undoById('${id}')">Откат</button></td></tr>`;
+                const fields = (l.summary_fields||[]).map(f => mapFieldLabel(f)).join(', ');
+                return `<tr>
+                    <td>${when}</td>
+                    <td>${count}</td>
+                    <td>${fields || '-'}</td>
+                    <td>
+                      <button class="inventory-action-btn inventory-btn-info" onclick="showLogDetails('${id}')">Подробнее</button>
+                      <button class="inventory-action-btn inventory-btn-secondary" onclick="undoById('${id}')">Откат</button>
+                    </td>
+                </tr>`;
             }).join('');
             const modalHtml = `
                 <div class="inventory-modal-overlay" onclick="closeLogsModal()">
@@ -1078,8 +1087,8 @@ loadColumnsConfig();
                     </div>
                     <div class="inventory-modal-body">
                       <table class="inventory-results-table">
-                        <thead><tr><th>Когда</th><th>Позиций</th><th>Действия</th></tr></thead>
-                        <tbody>${htmlRows || '<tr><td colspan="3">Пусто</td></tr>'}</tbody>
+                        <thead><tr><th>Когда</th><th>Позиций</th><th>Изменения</th><th>Действия</th></tr></thead>
+                        <tbody>${htmlRows || '<tr><td colspan="4">Пусто</td></tr>'}</tbody>
                       </table>
                     </div>
                     <div class="inventory-modal-footer">
@@ -1110,6 +1119,78 @@ loadColumnsConfig();
         } catch(e){
             showNotification('Ошибка при откате', 'error');
         }
+    }
+
+    function mapFieldLabel(field){
+        switch(field){
+            case 'groups_id': return 'Группа';
+            case 'states_id': return 'Статус';
+            case 'locations_id': return 'Местоположение';
+            case 'users_id': return 'Пользователь';
+            case 'contact': return 'Стеллаж';
+            case 'comment': return 'Комментарий';
+            default: return field;
+        }
+    }
+
+    function stringifyValue(v){
+        if (v === null || v === undefined) return '';
+        return (typeof v === 'object') ? JSON.stringify(v) : String(v);
+    }
+
+    window.showLogDetails = function(logId){
+        const headers = {};
+        if (typeof GLPI_CSRF_TOKEN !== 'undefined') headers['X-Glpi-Csrf-Token'] = GLPI_CSRF_TOKEN;
+        fetch('/plugins/inventory/ajax/logs.php', { method:'GET', headers, credentials:'same-origin'})
+        .then(r=>r.json())
+        .then(data => {
+            if (!data.success) { showNotification('Не удалось загрузить журнал', 'error'); return; }
+            const log = (data.logs||[]).find(l => (l.id||'')===logId);
+            if (!log) { showNotification('Запись не найдена', 'error'); return; }
+            const items = log.items||[];
+            const rows = items.map(it => {
+                const inv = it.otherserial || '-';
+                const name = it.name || '-';
+                const serial = it.serial || '-';
+                const changes = Object.keys(it.old||{}).map(f => {
+                    const from = stringifyValue(it.old[f]);
+                    const to = stringifyValue((it.new||{})[f]);
+                    return `<div><b>${mapFieldLabel(f)}:</b> ${escapeHtml(from)} → ${escapeHtml(to)}</div>`;
+                }).join('');
+                return `<tr>
+                    <td>${escapeHtml(inv)}</td>
+                    <td>${escapeHtml(name)}</td>
+                    <td>${escapeHtml(serial)}</td>
+                    <td>${changes || '-'}</td>
+                </tr>`;
+            }).join('');
+            const detailsHtml = `
+                <div class="inventory-modal-overlay log-details-overlay" onclick="closeLogDetails()">
+                  <div class="inventory-modal" onclick="event.stopPropagation()">
+                    <div class="inventory-modal-header">
+                      <h3>Подробности изменений</h3>
+                      <button class="inventory-modal-close" onclick="closeLogDetails()">&times;</button>
+                    </div>
+                    <div class="inventory-modal-body">
+                      <div style="margin-bottom:8px">Когда: ${log.when || '-'} | Пользователь: ${escapeHtml(log.user_name||'')}</div>
+                      <table class="inventory-results-table">
+                        <thead><tr><th>Инв. номер</th><th>Наименование</th><th>Серийный</th><th>Изменения</th></tr></thead>
+                        <tbody>${rows || '<tr><td colspan="4">Пусто</td></tr>'}</tbody>
+                      </table>
+                    </div>
+                    <div class="inventory-modal-footer">
+                      <button class="inventory-action-btn inventory-btn-secondary" onclick="closeLogDetails()">Закрыть</button>
+                    </div>
+                  </div>
+                </div>`;
+            document.body.insertAdjacentHTML('beforeend', detailsHtml);
+        })
+        .catch(()=>showNotification('Ошибка загрузки деталей', 'error'));
+    }
+
+    window.closeLogDetails = function(){
+        const m = document.querySelector('.log-details-overlay');
+        if (m) m.remove();
     }
 
     // Генерация акта в HTML для печати

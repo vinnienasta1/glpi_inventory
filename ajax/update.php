@@ -51,8 +51,18 @@ $results = [
 $undoLog = [
     'when' => date('c'),
     'user_id' => Session::getLoginUserID(),
-    'items' => [] // каждый элемент: ['type_class'=>..., 'id'=>..., 'fields'=>['field'=>'oldValue']]
+    'user_name' => '',
+    'items' => [] // каждый элемент: {'type_class','id','name','otherserial','serial','old':{...},'new':{...}}
 ];
+
+// Определим отображаемое имя пользователя
+$__uid = Session::getLoginUserID();
+if ($__uid) {
+    $u = new User();
+    if ($u->getFromDB($__uid)) {
+        $undoLog['user_name'] = trim(($u->fields['realname'] ?? '') . ' ' . ($u->fields['firstname'] ?? ''));
+    }
+}
 
 foreach ($items as $item) {
     if ($item['isNotFound']) {
@@ -85,6 +95,7 @@ foreach ($items as $item) {
     // Подготавливаем данные для обновления
     $updateData = ['id' => $item['id']];
     $revertFields = [];
+    $appliedFields = [];
     
     foreach ($changes as $change) {
         $field = $change['field'];
@@ -99,6 +110,7 @@ foreach ($items as $item) {
                         $revertFields['groups_id'] = (int)$itemClass->fields['groups_id'];
                     }
                     $updateData['groups_id'] = $idValue;
+                    $appliedFields['groups_id'] = $idValue;
                 }
                 break;
             case 'state_name':
@@ -107,6 +119,7 @@ foreach ($items as $item) {
                         $revertFields['states_id'] = (int)$itemClass->fields['states_id'];
                     }
                     $updateData['states_id'] = $idValue;
+                    $appliedFields['states_id'] = $idValue;
                 }
                 break;
             case 'location_name':
@@ -115,6 +128,7 @@ foreach ($items as $item) {
                         $revertFields['locations_id'] = (int)$itemClass->fields['locations_id'];
                     }
                     $updateData['locations_id'] = $idValue;
+                    $appliedFields['locations_id'] = $idValue;
                 }
                 break;
             case 'user_name':
@@ -123,6 +137,7 @@ foreach ($items as $item) {
                         $revertFields['users_id'] = (int)$itemClass->fields['users_id'];
                     }
                     $updateData['users_id'] = $idValue;
+                    $appliedFields['users_id'] = $idValue;
                 }
                 break;
             case 'contact':
@@ -131,6 +146,7 @@ foreach ($items as $item) {
                         $revertFields['contact'] = (string)$itemClass->fields['contact'];
                     }
                     $updateData['contact'] = $value;
+                    $appliedFields['contact'] = $value;
                 }
                 break;
             case 'comment_append':
@@ -140,6 +156,7 @@ foreach ($items as $item) {
                     if ($append !== '') {
                         $revertFields['comment'] = $current;
                         $updateData['comment'] = $current === '' ? $append : ($current . "\n" . $append);
+                        $appliedFields['comment'] = $updateData['comment'];
                     }
                 }
                 break;
@@ -154,7 +171,11 @@ foreach ($items as $item) {
                 $undoLog['items'][] = [
                     'type_class' => $item['type_class'],
                     'id' => (int)$item['id'],
-                    'fields' => $revertFields
+                    'name' => isset($itemClass->fields['name']) ? (string)$itemClass->fields['name'] : '',
+                    'otherserial' => isset($itemClass->fields['otherserial']) ? (string)$itemClass->fields['otherserial'] : '',
+                    'serial' => isset($itemClass->fields['serial']) ? (string)$itemClass->fields['serial'] : '',
+                    'old' => $revertFields,
+                    'new' => $appliedFields
                 ];
             }
         } else {
