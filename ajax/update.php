@@ -96,6 +96,8 @@ foreach ($items as $item) {
     $updateData = ['id' => $item['id']];
     $revertFields = [];
     $appliedFields = [];
+    $revertLabels = [];
+    $appliedLabels = [];
     
     foreach ($changes as $change) {
         $field = $change['field'];
@@ -108,45 +110,105 @@ foreach ($items as $item) {
                 if ($idValue > 0) {
                     if (isset($itemClass->fields['groups_id'])) {
                         $revertFields['groups_id'] = (int)$itemClass->fields['groups_id'];
+                        // Человеко-читаемое имя старой группы
+                        $oldName = '';
+                        if ($revertFields['groups_id'] > 0) {
+                            $grp = new Group();
+                            if ($grp->getFromDB($revertFields['groups_id'])) {
+                                $oldName = (string)($grp->fields['name'] ?? '');
+                            }
+                        }
+                        $revertLabels['groups_id'] = $oldName;
                     }
                     $updateData['groups_id'] = $idValue;
                     $appliedFields['groups_id'] = $idValue;
+                    // Имя новой группы
+                    $newName = '';
+                    $grp2 = new Group();
+                    if ($grp2->getFromDB($idValue)) {
+                        $newName = (string)($grp2->fields['name'] ?? '');
+                    }
+                    $appliedLabels['groups_id'] = $newName;
                 }
                 break;
             case 'state_name':
                 if ($idValue > 0) {
                     if (isset($itemClass->fields['states_id'])) {
                         $revertFields['states_id'] = (int)$itemClass->fields['states_id'];
+                        $oldName = '';
+                        if ($revertFields['states_id'] > 0) {
+                            $st = new State();
+                            if ($st->getFromDB($revertFields['states_id'])) {
+                                $oldName = (string)($st->fields['name'] ?? '');
+                            }
+                        }
+                        $revertLabels['states_id'] = $oldName;
                     }
                     $updateData['states_id'] = $idValue;
                     $appliedFields['states_id'] = $idValue;
+                    $newName = '';
+                    $st2 = new State();
+                    if ($st2->getFromDB($idValue)) {
+                        $newName = (string)($st2->fields['name'] ?? '');
+                    }
+                    $appliedLabels['states_id'] = $newName;
                 }
                 break;
             case 'location_name':
                 if ($idValue > 0) {
                     if (isset($itemClass->fields['locations_id'])) {
                         $revertFields['locations_id'] = (int)$itemClass->fields['locations_id'];
+                        $oldName = '';
+                        if ($revertFields['locations_id'] > 0) {
+                            $loc = new Location();
+                            if ($loc->getFromDB($revertFields['locations_id'])) {
+                                $oldName = (string)($loc->fields['name'] ?? '');
+                            }
+                        }
+                        $revertLabels['locations_id'] = $oldName;
                     }
                     $updateData['locations_id'] = $idValue;
                     $appliedFields['locations_id'] = $idValue;
+                    $newName = '';
+                    $loc2 = new Location();
+                    if ($loc2->getFromDB($idValue)) {
+                        $newName = (string)($loc2->fields['name'] ?? '');
+                    }
+                    $appliedLabels['locations_id'] = $newName;
                 }
                 break;
             case 'user_name':
                 if ($idValue > 0) {
                     if (isset($itemClass->fields['users_id'])) {
                         $revertFields['users_id'] = (int)$itemClass->fields['users_id'];
+                        $oldName = '';
+                        if ($revertFields['users_id'] > 0) {
+                            $usr = new User();
+                            if ($usr->getFromDB($revertFields['users_id'])) {
+                                $oldName = trim((string)($usr->fields['realname'] ?? '') . ' ' . (string)($usr->fields['firstname'] ?? ''));
+                            }
+                        }
+                        $revertLabels['users_id'] = $oldName;
                     }
                     $updateData['users_id'] = $idValue;
                     $appliedFields['users_id'] = $idValue;
+                    $newName = '';
+                    $usr2 = new User();
+                    if ($usr2->getFromDB($idValue)) {
+                        $newName = trim((string)($usr2->fields['realname'] ?? '') . ' ' . (string)($usr2->fields['firstname'] ?? ''));
+                    }
+                    $appliedLabels['users_id'] = $newName;
                 }
                 break;
             case 'contact':
                 if ($value !== null) {
                     if (isset($itemClass->fields['contact'])) {
                         $revertFields['contact'] = (string)$itemClass->fields['contact'];
+                        $revertLabels['contact'] = (string)$itemClass->fields['contact'];
                     }
                     $updateData['contact'] = $value;
                     $appliedFields['contact'] = $value;
+                    $appliedLabels['contact'] = $value;
                 }
                 break;
             case 'comment_append':
@@ -155,8 +217,10 @@ foreach ($items as $item) {
                     $append = (string)$value;
                     if ($append !== '') {
                         $revertFields['comment'] = $current;
+                        $revertLabels['comment'] = $current;
                         $updateData['comment'] = $current === '' ? $append : ($current . "\n" . $append);
                         $appliedFields['comment'] = $updateData['comment'];
+                        $appliedLabels['comment'] = $updateData['comment'];
                     }
                 }
                 break;
@@ -175,7 +239,9 @@ foreach ($items as $item) {
                     'otherserial' => isset($itemClass->fields['otherserial']) ? (string)$itemClass->fields['otherserial'] : '',
                     'serial' => isset($itemClass->fields['serial']) ? (string)$itemClass->fields['serial'] : '',
                     'old' => $revertFields,
-                    'new' => $appliedFields
+                    'new' => $appliedFields,
+                    'old_labels' => $revertLabels,
+                    'new_labels' => $appliedLabels
                 ];
             }
         } else {

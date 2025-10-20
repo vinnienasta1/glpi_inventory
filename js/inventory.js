@@ -1073,14 +1073,14 @@ loadColumnsConfig();
                     <td>${count}</td>
                     <td>${fields || '-'}</td>
                     <td>
-                      <button class="inventory-action-btn inventory-btn-info" onclick="showLogDetails('${id}')">Подробнее</button>
-                      <button class="inventory-action-btn inventory-btn-secondary" onclick="undoById('${id}')">Откат</button>
+                      <button class="inventory-action-btn inventory-btn-info" title="Подробнее" onclick="showLogDetails('${id}')"><i class="fas fa-info-circle"></i></button>
+                      <button class="inventory-action-btn inventory-btn-secondary" title="Откат" onclick="undoById('${id}')"><i class="fas fa-undo"></i></button>
                     </td>
                 </tr>`;
             }).join('');
             const modalHtml = `
                 <div class="inventory-modal-overlay" onclick="closeLogsModal()">
-                  <div class="inventory-modal" onclick="event.stopPropagation()">
+                  <div class="inventory-modal" style="max-width: 1100px; width: 95vw;" onclick="event.stopPropagation()">
                     <div class="inventory-modal-header">
                       <h3>Журнал массовых изменений</h3>
                       <button class="inventory-modal-close" onclick="closeLogsModal()">&times;</button>
@@ -1123,7 +1123,7 @@ loadColumnsConfig();
 
     function mapFieldLabel(field){
         switch(field){
-            case 'groups_id': return 'Группа';
+            case 'groups_id': return 'Департамент';
             case 'states_id': return 'Статус';
             case 'locations_id': return 'Местоположение';
             case 'users_id': return 'Пользователь';
@@ -1153,9 +1153,9 @@ loadColumnsConfig();
                 const name = it.name || '-';
                 const serial = it.serial || '-';
                 const changes = Object.keys(it.old||{}).map(f => {
-                    const from = stringifyValue(it.old[f]);
-                    const to = stringifyValue((it.new||{})[f]);
-                    return `<div><b>${mapFieldLabel(f)}:</b> ${escapeHtml(from)} → ${escapeHtml(to)}</div>`;
+                    const fromL = ((it.old_labels||{})[f] !== undefined ? (it.old_labels||{})[f] : it.old[f]);
+                    const toL = ((it.new_labels||{})[f] !== undefined ? (it.new_labels||{})[f] : (it.new||{})[f]);
+                    return `<div><b>${mapFieldLabel(f)}:</b> ${escapeHtml(stringifyValue(fromL))} → ${escapeHtml(stringifyValue(toL))}</div>`;
                 }).join('');
                 return `<tr>
                     <td>${escapeHtml(inv)}</td>
