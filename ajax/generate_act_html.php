@@ -95,6 +95,28 @@ $truncate = function($s, $max = 50) {
 };
 
 // Конфигурация маппинга по заголовкам (можно расширять без правки кода)
+$tableNode = $xpath->query('(//table)[1]')->item(0);
+// Если таблицы нет в шаблоне (удалена), создаём её на месте подходящего плейсхолдера
+if (!$tableNode) {
+    // Ищем плейсхолдеры: id='act-table' или data-act-table или класс 'act-table'
+    $placeholder = $xpath->query('//*[@id="act-table" or @data-act-table or contains(concat(" ", normalize-space(@class), " "), " act-table ")]')->item(0);
+    if ($placeholder) {
+        $tableNode = $dom->createElement('table');
+        $placeholder->appendChild($tableNode);
+    } else {
+        // Вставляем перед блоком подписей, если есть
+        $sig = $xpath->query('//div[contains(concat(" ", normalize-space(@class), " "), " signature ")]')->item(0);
+        $tableNode = $dom->createElement('table');
+        if ($sig && $sig->parentNode) {
+            $sig->parentNode->insertBefore($tableNode, $sig);
+        } else {
+            // В конец body
+            $body = $xpath->query('//body')->item(0);
+            if ($body) { $body->appendChild($tableNode); }
+        }
+    }
+}
+
 $rows = $xpath->query('(//table)[1]//tr');
 if ($rows && $rows->length > 0) {
     $header = $rows->item(0);
@@ -147,7 +169,6 @@ if ($rows && $rows->length > 0) {
     if (in_array('Комментарий',$columns,true)) { $idxMap['comment'] = array_search('Комментарий',$columns,true); }
 
     // Генерируем столько строк, сколько элементов
-    $tableNode = $xpath->query('(//table)[1]')->item(0);
     $tbody = $xpath->query('(//table)[1]/tbody')->item(0);
     if (!$tbody && $tableNode) { $tbody = $dom->createElement('tbody'); $tableNode->appendChild($tbody); }
     for ($i = 0; $i < count($items); $i++) {
