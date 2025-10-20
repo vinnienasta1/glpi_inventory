@@ -142,8 +142,9 @@ window.getAllColumns = function() {
 window.getCellValue = function(item, columnKey) {
     // Упрощенный вывод для неактуальных позиций
     if (item.isNotFound) {
-        // Показываем только «Поиск» (введённый термин) и кнопку удаления
+        // Поиск — запрос, Тип — НЕ НАЙДЕНО, Действия — Удалить
         if (columnKey === 'search_term') return escapeHtml(item.search_term);
+        if (columnKey === 'type') return `<span class="non-actual-label">НЕ НАЙДЕНО</span>`;
         if (columnKey === 'actions') {
             return `<button class="inventory-delete-btn" onclick="removeFromBuffer(${item.index})">
                 <i class="fas fa-trash"></i> Удалить
@@ -152,9 +153,10 @@ window.getCellValue = function(item, columnKey) {
         return '';
     }
     if (item.isDuplicate) {
-        // Дубликаты: «Поиск», «Инв. номер», «Удалить»
+        // Поиск — запрос, Инв. номер — значение, Тип — ДУБЛИКАТ, Действия — Удалить
         if (columnKey === 'search_term') return escapeHtml(item.search_term);
         if (columnKey === 'otherserial') return escapeHtml(item.otherserial || '-');
+        if (columnKey === 'type') return `<span class="non-actual-label">Дубликат</span>`;
         if (columnKey === 'actions') {
             return `<button class="inventory-delete-btn" onclick="removeFromBuffer(${item.index})">
                 <i class="fas fa-trash"></i> Удалить

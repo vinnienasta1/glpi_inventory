@@ -130,9 +130,13 @@ if ($rows && $rows->length > 0) {
 
     $trh = $dom->createElement('tr');
     $lowname = mb_strtolower(basename($tplPath));
-    $columns = ['№','Наименование','Инв. Номер','S.N'];
-    if (mb_strpos($lowname,'sale') === 0) {
-        $columns = ['№','Наименование','Инв. Номер','Сумма','Комментарий'];
+    // По образцу из папки 1: для выдачи/возврата четыре колонки, для выкупа пять (сумма пустая)
+    if (mb_strpos($lowname,'giveing') === 0 || mb_strpos($lowname,'return') === 0) {
+        $columns = ['№','Наименование','Инв. номер','S.N'];
+    } elseif (mb_strpos($lowname,'sale') === 0) {
+        $columns = ['№','Наименование','Инв. номер','Сумма','Комментарий'];
+    } else {
+        $columns = ['№','Наименование','Инв. номер','S.N'];
     }
     foreach ($columns as $col) { $th = $dom->createElement('th', $col); $trh->appendChild($th); }
     $thead->appendChild($trh);
@@ -156,7 +160,7 @@ if ($rows && $rows->length > 0) {
         if ($idxMap['num'] !== null && $idxMap['num'] < $cells->length) $cells->item($idxMap['num'])->nodeValue = (string)($i+1);
         if ($idxMap['name'] !== null && $idxMap['name'] < $cells->length) $cells->item($idxMap['name'])->nodeValue = $truncate($it['name'] ?? '', 50);
         if ($idxMap['inv'] !== null && $idxMap['inv'] < $cells->length) $cells->item($idxMap['inv'])->nodeValue = (string)($it['otherserial'] ?? '');
-        if ($idxMap['sn'] !== null && $idxMap['sn'] < $cells->length && $idxMap['sn'] !== $idxMap['sum']) $cells->item($idxMap['sn'])->nodeValue = (string)($it['serial'] ?? '');
+        if ($idxMap['sn'] !== null && $idxMap['sn'] < $cells->length) $cells->item($idxMap['sn'])->nodeValue = (string)($it['serial'] ?? '');
         $isSale = (mb_strpos(mb_strtolower(basename($tplPath)), 'sale') === 0);
         if ($isSale) {
             if ($idxMap['sum'] !== null && $idxMap['sum'] < $cells->length) $cells->item($idxMap['sum'])->nodeValue = '';
