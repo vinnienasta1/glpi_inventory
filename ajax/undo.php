@@ -42,7 +42,8 @@ $ok = 0; $fail = 0; $errors = [];
 foreach ($items as $entry) {
     $type = $entry['type_class'] ?? '';
     $id = (int)($entry['id'] ?? 0);
-    $fields = $entry['fields'] ?? [];
+    // С версии с журналом сохраняем старые значения в ключе 'old'
+    $fields = $entry['old'] ?? ($entry['fields'] ?? []);
     if (!$type || !$id || empty($fields)) continue;
 
     $itemClass = null;

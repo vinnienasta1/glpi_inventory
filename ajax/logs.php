@@ -30,6 +30,15 @@ foreach ($logs as &$l) {
         }
     }
     $l['summary_fields'] = array_keys($summary);
+    // Форматируем дату как ЧЧ:ММ | ДД/ММ/ГГГГ
+    if (!empty($l['when'])) {
+        $ts = strtotime($l['when']);
+        if ($ts) {
+            $l['when_fmt'] = date('H:i | d/m/Y', $ts);
+        } else {
+            $l['when_fmt'] = $l['when'];
+        }
+    }
 }
 unset($l);
 echo json_encode(['success' => true, 'logs' => $logs]);

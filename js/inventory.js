@@ -1064,7 +1064,7 @@ loadColumnsConfig();
             if (!data.success) { showNotification('Не удалось загрузить журнал', 'error'); return; }
             const logs = data.logs || [];
             const htmlRows = logs.slice().reverse().map(l => {
-                const when = l.when || '-';
+                const when = l.when_fmt || l.when || '-';
                 const count = (l.items||[]).length;
                 const id = l.id || '';
                 const fields = (l.summary_fields||[]).map(f => mapFieldLabel(f)).join(', ');
@@ -1073,14 +1073,16 @@ loadColumnsConfig();
                     <td>${count}</td>
                     <td>${fields || '-'}</td>
                     <td>
-                      <button class="inventory-action-btn inventory-btn-info" title="Подробнее" onclick="showLogDetails('${id}')"><i class="fas fa-info-circle"></i></button>
-                      <button class="inventory-action-btn inventory-btn-secondary" title="Откат" onclick="undoById('${id}')"><i class="fas fa-undo"></i></button>
+                      <div style="display:flex; gap:6px; align-items:center;">
+                        <button class="inventory-action-btn inventory-btn-info" title="Подробнее" onclick="showLogDetails('${id}')"><i class="fas fa-info-circle"></i></button>
+                        <button class="inventory-action-btn inventory-btn-secondary" title="Откат" onclick="undoById('${id}')"><i class="fas fa-undo"></i></button>
+                      </div>
                     </td>
                 </tr>`;
             }).join('');
             const modalHtml = `
                 <div class="inventory-modal-overlay" onclick="closeLogsModal()">
-                  <div class="inventory-modal" style="max-width: 1100px; width: 95vw;" onclick="event.stopPropagation()">
+                  <div class="inventory-modal" style="max-width: 1200px; width: 95vw;" onclick="event.stopPropagation()">
                     <div class="inventory-modal-header">
                       <h3>Журнал массовых изменений</h3>
                       <button class="inventory-modal-close" onclick="closeLogsModal()">&times;</button>
@@ -1166,7 +1168,7 @@ loadColumnsConfig();
             }).join('');
             const detailsHtml = `
                 <div class="inventory-modal-overlay log-details-overlay" onclick="closeLogDetails()">
-                  <div class="inventory-modal" onclick="event.stopPropagation()">
+                  <div class="inventory-modal" style="max-width: 1200px; width: 95vw;" onclick="event.stopPropagation()">
                     <div class="inventory-modal-header">
                       <h3>Подробности изменений</h3>
                       <button class="inventory-modal-close" onclick="closeLogDetails()">&times;</button>
