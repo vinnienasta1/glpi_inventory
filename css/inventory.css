@@ -281,14 +281,19 @@
 
 /* Стили для разных типов строк в буфере */
 .inventory-not-found-row {
-    background-color: #f1f3f5 !important;
-    color: #5f6b7a;
+    background-color: #e5e7eb !important; /* четкий серый */
+    color: #374151;
 }
 
 .inventory-duplicate-row {
-    background-color: #fff4cc !important;
-    color: #735c0f;
+    background-color: #fff3cd !important; /* унифицированный мягкий желтый */
+    color: #5c440a;
 }
+
+/* Центрирование текста для неактуальных строк */
+.non-actual-cell { text-align: center; padding: 12px; }
+.non-actual-label { font-weight: 600; margin-bottom: 6px; }
+.non-actual-actions { display: flex; justify-content: center; gap: 8px; }
 
 .inventory-not-found-row:hover {
     background-color: #e9ecef !important;

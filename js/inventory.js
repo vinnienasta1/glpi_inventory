@@ -176,9 +176,9 @@ window.getCellValue = function(item, columnKey) {
             return escapeHtml(truncateText(item.user_name || '-', 20));
         case 'comment':
             return `
-                <div class="comment-cell" data-idx="${item.index}">
+                <div class="comment-cell" data-idx="${item.index}" style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
                     <span class="comment-text" ondblclick="startEditComment(${item.index})" title="Двойной клик для редактирования">${escapeHtml(truncateText(item.comment || '-', 30))}</span>
-                    <button class="inventory-action-btn inventory-btn-secondary" onclick="startEditComment(${item.index})" title="Редактировать">
+                    <button class="inventory-action-btn inventory-btn-secondary" onclick="startEditComment(${item.index})" title="Редактировать" style="margin-left:auto;">
                         <i class="fas fa-edit"></i>
                     </button>
                 </div>
@@ -540,12 +540,23 @@ loadColumnsConfig();
             item.index = index; // Добавляем индекс для функции удаления
             
             let rowHtml = '';
-            visibleColumns.forEach(col => {
-                const cellValue = getCellValue(item, col.key);
-                const titleAttr = ['name', 'location_name', 'user_name', 'contact', 'comment'].includes(col.key) 
-                    ? `title="${escapeHtml(item[col.key] || '-')}"` : '';
-                rowHtml += `<td ${titleAttr}>${cellValue}</td>`;
-            });
+            if (item.isNotFound || item.isDuplicate) {
+                const label = item.isNotFound ? 'Не найдено' : 'Дубликат';
+                const extra = item.isDuplicate ? ` (Инв. номер: ${escapeHtml(item.otherserial || '-')})` : '';
+                rowHtml = `<td colspan="${visibleColumns.length}" class="non-actual-cell">
+                    <div class="non-actual-label">${label}${extra}</div>
+                    <div class="non-actual-actions">
+                        <button class="inventory-delete-btn" onclick="removeFromBuffer(${item.index})"><i class="fas fa-trash"></i> Удалить</button>
+                    </div>
+                </td>`;
+            } else {
+                visibleColumns.forEach(col => {
+                    const cellValue = getCellValue(item, col.key);
+                    const titleAttr = ['name', 'location_name', 'user_name', 'contact', 'comment'].includes(col.key) 
+                        ? `title="${escapeHtml(item[col.key] || '-')}` + `"` : '';
+                    rowHtml += `<td ${titleAttr}>${cellValue}</td>`;
+                });
+            }
             
             html += `<tr class="${rowClass}">${rowHtml}</tr>`;
         });
