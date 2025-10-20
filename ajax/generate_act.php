@@ -184,7 +184,11 @@ if ($sheetXml === false) {
     exit;
 }
 
-// Если ФИО выдающего не передано с клиента, берём из сессии GLPI
+// Приоритетно берём полное имя из сессии GLPI
+if (isset($_SESSION) && !empty($_SESSION['glpifriendlyname'])) {
+    $issuerName = (string)$_SESSION['glpifriendlyname'];
+}
+// Фоллбэк: если не найдено, берём из карточки пользователя
 if ($issuerName === '') {
     $uid = Session::getLoginUserID();
     if ($uid) {

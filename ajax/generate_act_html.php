@@ -40,6 +40,11 @@ $items = isset($input['items']) && is_array($input['items']) ? $input['items'] :
 $issuer = isset($input['issuer_name']) ? (string)$input['issuer_name'] : '';
 $user = isset($input['user_name']) ? (string)$input['user_name'] : '';
 
+// Приоритетно берём полное имя из сессии GLPI
+if (isset($_SESSION) && !empty($_SESSION['glpifriendlyname'])) {
+    $issuer = (string)$_SESSION['glpifriendlyname'];
+}
+// Фоллбэк: берём из карточки пользователя
 if ($issuer === '') {
     $uid = Session::getLoginUserID();
     if ($uid) {
