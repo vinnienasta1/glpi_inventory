@@ -117,78 +117,43 @@ if (!$tableNode) {
     }
 }
 
-$rows = $xpath->query('(//table)[1]//tr');
-if ($rows && $rows->length > 0) {
-    $header = $rows->item(0);
-    $headerCells = $header ? ($header->getElementsByTagName('th')->length ? $header->getElementsByTagName('th') : $header->getElementsByTagName('td')) : null;
-    $idxMap = ['name' => null, 'inv' => null, 'sn' => null, 'sum' => null, 'comment' => null, 'num' => null];
-    if ($headerCells && $headerCells->length) {
-        for ($i = 0; $i < $headerCells->length; $i++) {
-            $txt = $normalize($headerCells->item($i)->textContent);
-            if ($idxMap['num'] === null && ($txt === '№' || $contains($txt, '№'))) { $idxMap['num'] = $i; continue; }
-            if ($idxMap['name'] === null && ($contains($txt, 'наимен') || $contains($txt, 'наименование'))) { $idxMap['name'] = $i; continue; }
-            if ($idxMap['inv'] === null && ($contains($txt, 'инв'))) { $idxMap['inv'] = $i; continue; }
-            if ($idxMap['sn'] === null && ($contains($txt, 'sn') || $contains($txt, 's.n') || $contains($txt, 'сер'))) { $idxMap['sn'] = $i; continue; }
-            if ($idxMap['sum'] === null && ($contains($txt, 'сумм'))) { $idxMap['sum'] = $i; continue; }
-            if ($idxMap['comment'] === null && ($contains($txt, 'коммент'))) { $idxMap['comment'] = $i; continue; }
-        }
-    }
+// Всегда строим таблицу с нуля (thead+tbody)
+if ($tableNode) {
+    while ($tableNode->firstChild) { $tableNode->removeChild($tableNode->firstChild); }
+}
+$thead = $dom->createElement('thead');
+$tbody = $dom->createElement('tbody');
+if ($tableNode) { $tableNode->appendChild($thead); $tableNode->appendChild($tbody); }
 
-    // Очищаем все строки данных (кроме заголовка)
-    for ($ri = $rows->length - 1; $ri >= 1; $ri--) {
-        $rowNode = $rows->item($ri);
-        if ($rowNode && $rowNode->parentNode) {
-            $rowNode->parentNode->removeChild($rowNode);
-        }
-    }
+$trh = $dom->createElement('tr');
+$lowname = mb_strtolower(basename($tplPath));
+if (mb_strpos($lowname,'sale') === 0) {
+    $columns = ['№','Наименование','Инв. номер','Сумма','Комментарий'];
+} else {
+    $columns = ['№','Наименование','Инв. номер','S.N'];
+}
+foreach ($columns as $col) { $th = $dom->createElement('th', $col); $trh->appendChild($th); }
+$thead->appendChild($trh);
 
-    // Полностью перерисовываем таблицу с нуля: thead + tbody
-    if ($tableNode) {
-        while ($tableNode->firstChild) { $tableNode->removeChild($tableNode->firstChild); }
-    }
-    $thead = $dom->createElement('thead');
-    $tbody = $dom->createElement('tbody');
-    if ($tableNode) { $tableNode->appendChild($thead); $tableNode->appendChild($tbody); }
+$idxMap = ['num'=>0,'name'=>1,'inv'=>2,'sn'=>3,'sum'=>null,'comment'=>null];
+if (in_array('Сумма',$columns,true)) { $idxMap['sum'] = array_search('Сумма',$columns,true); }
+if (in_array('Комментарий',$columns,true)) { $idxMap['comment'] = array_search('Комментарий',$columns,true); }
 
-    $trh = $dom->createElement('tr');
-    $lowname = mb_strtolower(basename($tplPath));
-    // По образцу из папки 1: для выдачи/возврата четыре колонки, для выкупа пять (сумма пустая)
-    if (mb_strpos($lowname,'giveing') === 0 || mb_strpos($lowname,'return') === 0) {
-        $columns = ['№','Наименование','Инв. номер','S.N'];
-    } elseif (mb_strpos($lowname,'sale') === 0) {
-        $columns = ['№','Наименование','Инв. номер','Сумма','Комментарий'];
-    } else {
-        $columns = ['№','Наименование','Инв. номер','S.N'];
+for ($i = 0; $i < count($items); $i++) {
+    $it = $items[$i];
+    $tr = $dom->createElement('tr');
+    for ($c = 0; $c < count($columns); $c++) $tr->appendChild($dom->createElement('td', ''));
+    $cells = $tr->getElementsByTagName('td');
+    if ($idxMap['num'] !== null && $idxMap['num'] < $cells->length) $cells->item($idxMap['num'])->nodeValue = (string)($i+1);
+    if ($idxMap['name'] !== null && $idxMap['name'] < $cells->length) $cells->item($idxMap['name'])->nodeValue = $truncate($it['name'] ?? '', 50);
+    if ($idxMap['inv'] !== null && $idxMap['inv'] < $cells->length) $cells->item($idxMap['inv'])->nodeValue = (string)($it['otherserial'] ?? '');
+    if ($idxMap['sn'] !== null && $idxMap['sn'] < $cells->length && in_array('S.N',$columns,true)) $cells->item($idxMap['sn'])->nodeValue = (string)($it['serial'] ?? '');
+    $isSale = (mb_strpos($lowname, 'sale') === 0);
+    if ($isSale) {
+        if ($idxMap['sum'] !== null && $idxMap['sum'] < $cells->length) $cells->item($idxMap['sum'])->nodeValue = '';
+        if ($idxMap['comment'] !== null && $idxMap['comment'] < $cells->length) $cells->item($idxMap['comment'])->nodeValue = (string)($it['otherserial'] ?? '');
     }
-    foreach ($columns as $col) { $th = $dom->createElement('th', $col); $trh->appendChild($th); }
-    $thead->appendChild($trh);
-
-    // Пересоберем карту индексов под новую шапку
-    $idxMap = ['num'=>0,'name'=>1,'inv'=>2,'sn'=>3,'sum'=>null,'comment'=>null];
-    if (in_array('Сумма',$columns,true)) { $idxMap['sum'] = array_search('Сумма',$columns,true); }
-    if (in_array('Комментарий',$columns,true)) { $idxMap['comment'] = array_search('Комментарий',$columns,true); }
-
-    // Генерируем столько строк, сколько элементов
-    $tbody = $xpath->query('(//table)[1]/tbody')->item(0);
-    if (!$tbody && $tableNode) { $tbody = $dom->createElement('tbody'); $tableNode->appendChild($tbody); }
-    for ($i = 0; $i < count($items); $i++) {
-        $it = $items[$i];
-        $tr = $dom->createElement('tr');
-        // Под номер
-        // Создаём ячейки по числу колонок заголовка
-        for ($c = 0; $c < count($columns); $c++) $tr->appendChild($dom->createElement('td', ''));
-        $cells = $tr->getElementsByTagName('td');
-        if ($idxMap['num'] !== null && $idxMap['num'] < $cells->length) $cells->item($idxMap['num'])->nodeValue = (string)($i+1);
-        if ($idxMap['name'] !== null && $idxMap['name'] < $cells->length) $cells->item($idxMap['name'])->nodeValue = $truncate($it['name'] ?? '', 50);
-        if ($idxMap['inv'] !== null && $idxMap['inv'] < $cells->length) $cells->item($idxMap['inv'])->nodeValue = (string)($it['otherserial'] ?? '');
-        if ($idxMap['sn'] !== null && $idxMap['sn'] < $cells->length) $cells->item($idxMap['sn'])->nodeValue = (string)($it['serial'] ?? '');
-        $isSale = (mb_strpos(mb_strtolower(basename($tplPath)), 'sale') === 0);
-        if ($isSale) {
-            if ($idxMap['sum'] !== null && $idxMap['sum'] < $cells->length) $cells->item($idxMap['sum'])->nodeValue = '';
-            if ($idxMap['comment'] !== null && $idxMap['comment'] < $cells->length) $cells->item($idxMap['comment'])->nodeValue = (string)($it['otherserial'] ?? '');
-        }
-        if ($tbody) $tbody->appendChild($tr); else if ($tableNode) $tableNode->appendChild($tr);
-    }
+    if ($tbody) $tbody->appendChild($tr); else if ($tableNode) $tableNode->appendChild($tr);
 }
 
 // Подписи: ищем в блоке .signature соответствующие строки
