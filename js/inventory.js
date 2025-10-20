@@ -37,12 +37,23 @@ document.addEventListener('DOMContentLoaded', function() {
     function closeAllOverlays() {
         try {
             document.querySelectorAll('.inventory-modal-overlay').forEach(el => el.remove());
+            document.querySelectorAll('.selection-modal-overlay').forEach(el => el.remove());
+            document.querySelectorAll('.log-details-overlay').forEach(el => el.remove());
         } catch (e) {}
     }
     closeAllOverlays();
     searchInput.disabled = false;
     searchInput.addEventListener('focus', closeAllOverlays);
     document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeAllOverlays(); });
+
+    // Любой клик внутри блока поиска сначала закрывает оверлеи, затем фокус на поле
+    const searchBox = document.querySelector('.inventory-search-box');
+    if (searchBox) {
+        searchBox.addEventListener('mousedown', function(ev){
+            closeAllOverlays();
+            setTimeout(() => { try { searchInput.focus(); } catch(e){} }, 0);
+        }, true);
+    }
 
     // Аудио-обратная связь при добавлении в буфер
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
