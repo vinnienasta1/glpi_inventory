@@ -234,6 +234,16 @@ foreach ($items as $item) {
                     }
                 }
                 break;
+            case 'comment_set':
+                if ($value !== null) {
+                    $current = isset($itemClass->fields['comment']) ? (string)$itemClass->fields['comment'] : '';
+                    $revertFields['comment'] = $current;
+                    $revertLabels['comment'] = $current;
+                    $updateData['comment'] = (string)$value;
+                    $appliedFields['comment'] = $updateData['comment'];
+                    $appliedLabels['comment'] = $updateData['comment'];
+                }
+                break;
         }
     }
     

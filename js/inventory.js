@@ -156,7 +156,14 @@ window.getCellValue = function(item, columnKey) {
         case 'user_name':
             return escapeHtml(truncateText(item.user_name || '-', 20));
         case 'comment':
-            return escapeHtml(truncateText(item.comment || '-', 30));
+            return `
+                <div class="comment-cell" data-idx="${item.index}">
+                    <span class="comment-text" ondblclick="startEditComment(${item.index})" title="Двойной клик для редактирования">${escapeHtml(truncateText(item.comment || '-', 30))}</span>
+                    <button class="inventory-action-btn inventory-btn-secondary" onclick="startEditComment(${item.index})" title="Редактировать">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                </div>
+            `;
         case 'actions':
             if (item.isNotFound) {
                 return `<button class="inventory-delete-btn" onclick="removeFromBuffer(${item.index})">
@@ -545,6 +552,51 @@ loadColumnsConfig();
     function truncateText(text, maxLength) {
         if (!text || text.length <= maxLength) return text;
         return text.substring(0, maxLength - 3) + '...';
+    }
+
+    // Инлайн-редактирование комментария
+    window.startEditComment = function(idx){
+        const row = document.querySelector(`.comment-cell[data-idx="${idx}"]`);
+        if (!row) return;
+        const item = itemsBuffer[idx];
+        const current = item ? (item.comment || '') : '';
+        row.innerHTML = `
+            <input type="text" class="inline-comment-input" value="${escapeHtml(current)}" style="width:70%"> 
+            <button class="inventory-action-btn inventory-btn-primary" onclick="saveEditComment(${idx})"><i class="fas fa-check"></i></button>
+            <button class="inventory-action-btn inventory-btn-secondary" onclick="cancelEditComment(${idx})"><i class="fas fa-times"></i></button>
+        `;
+        const input = row.querySelector('.inline-comment-input');
+        if (input) input.focus();
+    }
+
+    window.cancelEditComment = function(idx){
+        renderBuffer();
+    }
+
+    window.saveEditComment = async function(idx){
+        const item = itemsBuffer[idx];
+        if (!item || item.isNotFound) { showNotification('Нельзя редактировать комментарий для этой позиции', 'warning'); return; }
+        const row = document.querySelector(`.comment-cell[data-idx="${idx}"]`);
+        if (!row) return;
+        const input = row.querySelector('.inline-comment-input');
+        const newVal = input ? input.value : '';
+        try {
+            const headers = { 'Content-Type': 'application/json' };
+            if (typeof GLPI_CSRF_TOKEN !== 'undefined') headers['X-Glpi-Csrf-Token'] = GLPI_CSRF_TOKEN;
+            const body = JSON.stringify({ items: [item], changes: [{ field: 'comment_set', value: newVal }] });
+            const resp = await fetch('/plugins/inventory/ajax/update.php', { method:'POST', headers, body, credentials:'same-origin' });
+            const data = await resp.json();
+            if (data && data.success) {
+                itemsBuffer[idx].comment = newVal;
+                renderBuffer();
+                showNotification('Комментарий обновлён', 'success');
+            } else {
+                showNotification('Не удалось обновить комментарий', 'error');
+            }
+        } catch(e){
+            console.error(e);
+            showNotification('Ошибка сохранения', 'error');
+        }
     }
 
     
@@ -2180,8 +2232,30 @@ async function processImportQueue() {
             showNotification(`Импорт завершен. Найдено ${queue.multipleResults.length} номеров с множественными результатами.`, 'info');
             processMultipleResults(queue.multipleResults);
         } else {
-            showNotification(`Импорт завершен. Добавлено ${queue.results.length} позиций.`, 'success');
-            setTimeout(() => closeImportModal(), 2000);
+            // Сводка
+            const found = itemsBuffer.filter(i => !i.isNotFound && !i.isDuplicate).length;
+            const notfound = itemsBuffer.filter(i => i.isNotFound).length;
+            const dups = itemsBuffer.filter(i => i.isDuplicate).length;
+            const summaryHtml = `
+                <div class="inventory-modal-overlay" onclick="this.remove()">
+                  <div class="inventory-modal" onclick="event.stopPropagation()">
+                    <div class="inventory-modal-header">
+                      <h3>Импорт завершен</h3>
+                      <button class="inventory-modal-close" onclick="this.closest('.inventory-modal-overlay').remove()">&times;</button>
+                    </div>
+                    <div class="inventory-modal-body">
+                      <p>Обработано: ${queue.total}</p>
+                      <p>Найдено: ${found}</p>
+                      <p>Не найдено: ${notfound}</p>
+                      <p>Дубликаты: ${dups}</p>
+                    </div>
+                    <div class="inventory-modal-footer">
+                      <button class="inventory-action-btn inventory-btn-primary" onclick="(function(){ try{ keepActualItems(); }catch(e){}; document.querySelector('.inventory-modal-overlay')?.remove(); })()">Оставить актуальные</button>
+                      <button class="inventory-action-btn inventory-btn-secondary" onclick="document.querySelector('.inventory-modal-overlay')?.remove()">Закрыть</button>
+                    </div>
+                  </div>
+                </div>`;
+            document.body.insertAdjacentHTML('beforeend', summaryHtml);
         }
     }
 }

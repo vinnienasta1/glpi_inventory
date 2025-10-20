@@ -94,9 +94,9 @@ $truncate = function($s, $max = 50) {
     return mb_substr($s, 0, $max - 1) . '…';
 };
 
+// Конфигурация маппинга по заголовкам (можно расширять без правки кода)
 $rows = $xpath->query('(//table)[1]//tr');
-if ($rows && $rows->length > 1) {
-    // Определяем индексы столбцов по заголовку
+if ($rows && $rows->length > 0) {
     $header = $rows->item(0);
     $headerCells = $header ? ($header->getElementsByTagName('th')->length ? $header->getElementsByTagName('th') : $header->getElementsByTagName('td')) : null;
     $idxMap = ['name' => null, 'inv' => null, 'sn' => null, 'sum' => null, 'comment' => null, 'num' => null];
@@ -112,38 +112,39 @@ if ($rows && $rows->length > 1) {
         }
     }
 
-    // Заполняем строки данными (до 6)
-    for ($i = 0; $i < 6; $i++) {
-        $rowIndex = 1 + $i; // 0 — заголовок
-        if ($rowIndex >= $rows->length) break;
-        $tr = $rows->item($rowIndex);
-        if (!$tr) continue;
-        $tds = $tr->getElementsByTagName('td');
-        $item = isset($items[$i]) ? $items[$i] : null;
-        if (!$tds || !$tds->length) continue;
+    // Очищаем все строки данных (кроме заголовка)
+    for ($ri = $rows->length - 1; $ri >= 1; $ri--) {
+        $rows->item($ri)->parentNode->removeChild($rows->item($ri));
+    }
 
-        // Наименование (одна строка, усечение)
-        if ($idxMap['name'] !== null && $idxMap['name'] < $tds->length) {
-            $tds->item($idxMap['name'])->nodeValue = $item ? $truncate($item['name'] ?? '', 50) : '';
+    // Генерируем столько строк, сколько элементов
+    $tbody = $xpath->query('(//table)[1]/tbody')->item(0);
+    if (!$tbody) { $tbody = $xpath->query('(//table)[1]')->item(0); }
+    for ($i = 0; $i < count($items); $i++) {
+        $it = $items[$i];
+        $tr = $dom->createElement('tr');
+        // Под номер
+        if ($idxMap['num'] !== null) {
+            for ($c = 0; $c <= max($idxMap); $c++) {
+                $tr->appendChild($dom->createElement('td', ''));
+            }
         }
-        // Инв. номер
-        if ($idxMap['inv'] !== null && $idxMap['inv'] < $tds->length) {
-            $tds->item($idxMap['inv'])->nodeValue = $item ? (string)($item['otherserial'] ?? '') : '';
+        $cells = $tr->getElementsByTagName('td');
+        // Если в шаблоне нет tbody/строк, создаём ячейки по числу колонок заголовка
+        if ($cells->length === 0 && $headerCells) {
+            for ($c = 0; $c < $headerCells->length; $c++) $tr->appendChild($dom->createElement('td', ''));
         }
-        // Серийный номер
-        if ($idxMap['sn'] !== null && $idxMap['sn'] < $tds->length) {
-            $tds->item($idxMap['sn'])->nodeValue = $item ? (string)($item['serial'] ?? '') : '';
-        }
-        // Особые правила для шаблона sale: Сумма пусто, Комментарий = инв. номер
+        $cells = $tr->getElementsByTagName('td');
+        if ($idxMap['num'] !== null && $idxMap['num'] < $cells->length) $cells->item($idxMap['num'])->nodeValue = (string)($i+1);
+        if ($idxMap['name'] !== null && $idxMap['name'] < $cells->length) $cells->item($idxMap['name'])->nodeValue = $truncate($it['name'] ?? '', 50);
+        if ($idxMap['inv'] !== null && $idxMap['inv'] < $cells->length) $cells->item($idxMap['inv'])->nodeValue = (string)($it['otherserial'] ?? '');
+        if ($idxMap['sn'] !== null && $idxMap['sn'] < $cells->length) $cells->item($idxMap['sn'])->nodeValue = (string)($it['serial'] ?? '');
         $isSale = (mb_strpos(mb_strtolower(basename($tplPath)), 'sale') === 0);
         if ($isSale) {
-            if ($idxMap['sum'] !== null && $idxMap['sum'] < $tds->length) {
-                $tds->item($idxMap['sum'])->nodeValue = '';
-            }
-            if ($idxMap['comment'] !== null && $idxMap['comment'] < $tds->length) {
-                $tds->item($idxMap['comment'])->nodeValue = $item ? (string)($item['otherserial'] ?? '') : '';
-            }
+            if ($idxMap['sum'] !== null && $idxMap['sum'] < $cells->length) $cells->item($idxMap['sum'])->nodeValue = '';
+            if ($idxMap['comment'] !== null && $idxMap['comment'] < $cells->length) $cells->item($idxMap['comment'])->nodeValue = (string)($it['otherserial'] ?? '');
         }
+        if ($tbody) $tbody->appendChild($tr); else $rows->item(0)->parentNode->appendChild($tr);
     }
 }
 
