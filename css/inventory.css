@@ -281,13 +281,13 @@
 
 /* Стили для разных типов строк в буфере */
 .inventory-not-found-row {
-    background-color: #f8f9fa !important;
-    color: #6c757d;
+    background-color: #f1f3f5 !important;
+    color: #5f6b7a;
 }
 
 .inventory-duplicate-row {
-    background-color: #fff3cd !important;
-    border-left: 3px solid #ffc107;
+    background-color: #fff4cc !important;
+    color: #735c0f;
 }
 
 .inventory-not-found-row:hover {

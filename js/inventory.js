@@ -129,13 +129,32 @@ window.getAllColumns = function() {
 
 // Получить значение ячейки по ключу столбца
 window.getCellValue = function(item, columnKey) {
+    // Упрощенный вывод для неактуальных позиций
+    if (item.isNotFound) {
+        // Показываем только «Поиск» (введённый термин) и кнопку удаления
+        if (columnKey === 'search_term') return escapeHtml(item.search_term);
+        if (columnKey === 'actions') {
+            return `<button class="inventory-delete-btn" onclick="removeFromBuffer(${item.index})">
+                <i class="fas fa-trash"></i> Удалить
+            </button>`;
+        }
+        return '';
+    }
+    if (item.isDuplicate) {
+        // Дубликаты: «Поиск», «Инв. номер», «Удалить»
+        if (columnKey === 'search_term') return escapeHtml(item.search_term);
+        if (columnKey === 'otherserial') return escapeHtml(item.otherserial || '-');
+        if (columnKey === 'actions') {
+            return `<button class="inventory-delete-btn" onclick="removeFromBuffer(${item.index})">
+                <i class="fas fa-trash"></i> Удалить
+            </button>`;
+        }
+        return '';
+    }
     switch(columnKey) {
         case 'search_term':
             return escapeHtml(item.search_term);
         case 'type':
-            if (item.isNotFound) {
-                return '<span class="inventory-type-badge inventory-type-not-found">Не найдено</span>';
-            }
             return `<span class="inventory-type-badge inventory-type-${item.type_class}">
                 ${escapeHtml(item.type)}${item.isDuplicate ? ' <small>(Дубликат)</small>' : ''}
             </span>`;

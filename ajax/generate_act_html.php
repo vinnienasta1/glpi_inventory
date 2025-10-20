@@ -120,22 +120,22 @@ if ($rows && $rows->length > 0) {
         }
     }
 
-    // Сформируем шапку самостоятельно в зависимости от шаблона
-    $thead = $xpath->query('(//table)[1]/thead')->item(0);
-    if (!$thead && $tableNode) { $thead = $dom->createElement('thead'); $tableNode->insertBefore($thead, $tableNode->firstChild); }
-    // Очищаем текущий thead
-    if ($thead) { while ($thead->firstChild) { $thead->removeChild($thead->firstChild); } }
+    // Полностью перерисовываем таблицу с нуля: thead + tbody
+    if ($tableNode) {
+        while ($tableNode->firstChild) { $tableNode->removeChild($tableNode->firstChild); }
+    }
+    $thead = $dom->createElement('thead');
+    $tbody = $dom->createElement('tbody');
+    if ($tableNode) { $tableNode->appendChild($thead); $tableNode->appendChild($tbody); }
+
     $trh = $dom->createElement('tr');
     $lowname = mb_strtolower(basename($tplPath));
-    // Базовые колонки для выдачи
     $columns = ['№','Наименование','Инв. Номер','S.N'];
-    if (mb_strpos($lowname,'return') === 0) {
-        $columns = ['№','Наименование','Инв. Номер','S.N'];
-    } elseif (mb_strpos($lowname,'sale') === 0) {
-        $columns = ['№','Наименование','Инв. Номер','S.N','Сумма','Комментарий'];
+    if (mb_strpos($lowname,'sale') === 0) {
+        $columns = ['№','Наименование','Инв. Номер','Сумма','Комментарий'];
     }
     foreach ($columns as $col) { $th = $dom->createElement('th', $col); $trh->appendChild($th); }
-    if ($thead) { $thead->appendChild($trh); }
+    $thead->appendChild($trh);
 
     // Пересоберем карту индексов под новую шапку
     $idxMap = ['num'=>0,'name'=>1,'inv'=>2,'sn'=>3,'sum'=>null,'comment'=>null];
@@ -151,20 +151,18 @@ if ($rows && $rows->length > 0) {
         $tr = $dom->createElement('tr');
         // Под номер
         // Создаём ячейки по числу колонок заголовка
-        if ($headerCells) {
-            for ($c = 0; $c < $headerCells->length; $c++) $tr->appendChild($dom->createElement('td', ''));
-        }
+        for ($c = 0; $c < count($columns); $c++) $tr->appendChild($dom->createElement('td', ''));
         $cells = $tr->getElementsByTagName('td');
         if ($idxMap['num'] !== null && $idxMap['num'] < $cells->length) $cells->item($idxMap['num'])->nodeValue = (string)($i+1);
         if ($idxMap['name'] !== null && $idxMap['name'] < $cells->length) $cells->item($idxMap['name'])->nodeValue = $truncate($it['name'] ?? '', 50);
         if ($idxMap['inv'] !== null && $idxMap['inv'] < $cells->length) $cells->item($idxMap['inv'])->nodeValue = (string)($it['otherserial'] ?? '');
-        if ($idxMap['sn'] !== null && $idxMap['sn'] < $cells->length) $cells->item($idxMap['sn'])->nodeValue = (string)($it['serial'] ?? '');
+        if ($idxMap['sn'] !== null && $idxMap['sn'] < $cells->length && $idxMap['sn'] !== $idxMap['sum']) $cells->item($idxMap['sn'])->nodeValue = (string)($it['serial'] ?? '');
         $isSale = (mb_strpos(mb_strtolower(basename($tplPath)), 'sale') === 0);
         if ($isSale) {
             if ($idxMap['sum'] !== null && $idxMap['sum'] < $cells->length) $cells->item($idxMap['sum'])->nodeValue = '';
             if ($idxMap['comment'] !== null && $idxMap['comment'] < $cells->length) $cells->item($idxMap['comment'])->nodeValue = (string)($it['otherserial'] ?? '');
         }
-        if ($tbody) $tbody->appendChild($tr); else $rows->item(0)->parentNode->appendChild($tr);
+        if ($tbody) $tbody->appendChild($tr); else if ($tableNode) $tableNode->appendChild($tr);
     }
 }
 
