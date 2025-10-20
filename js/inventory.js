@@ -610,12 +610,26 @@ loadColumnsConfig();
         const item = itemsBuffer[idx];
         const current = item ? (item.comment || '') : '';
         row.innerHTML = `
-            <textarea class="inline-comment-input" style="width:70%;min-height:70px;">${escapeHtml(current)}</textarea>
-            <button class="inventory-action-btn inventory-btn-primary" onclick="saveEditComment(${idx})"><i class="fas fa-check"></i></button>
-            <button class="inventory-action-btn inventory-btn-secondary" onclick="cancelEditComment(${idx})"><i class="fas fa-times"></i></button>
+            <div class="inline-comment-editor" onclick="focusInlineComment(${idx}); event.stopPropagation();" onmousedown="event.stopPropagation();" style="display:flex;align-items:flex-start;gap:8px;width:100%">
+                <textarea class="inline-comment-input" style="flex:1;min-height:90px;" onmousedown="event.stopPropagation();" onclick="event.stopPropagation();">${escapeHtml(current)}</textarea>
+                <div class="comment-actions" style="display:flex;gap:6px;">
+                    <button class="inventory-action-btn inventory-btn-primary" onclick="saveEditComment(${idx}); event.stopPropagation();"><i class="fas fa-check"></i></button>
+                    <button class="inventory-action-btn inventory-btn-secondary" onclick="cancelEditComment(${idx}); event.stopPropagation();"><i class="fas fa-times"></i></button>
+                </div>
+            </div>
         `;
         const input = row.querySelector('.inline-comment-input');
         if (input) input.focus();
+    }
+
+    window.focusInlineComment = function(idx){
+        const row = document.querySelector(`.comment-cell[data-idx="${idx}"]`);
+        if (!row) return;
+        const input = row.querySelector('.inline-comment-input');
+        if (input) {
+            input.focus();
+            const val = input.value; input.value = ''; input.value = val;
+        }
     }
 
     window.cancelEditComment = function(idx){
@@ -1065,25 +1079,18 @@ loadColumnsConfig();
                 container.textContent = 'Шаблоны не найдены';
                 return;
             }
-            let html = '<div class="export-columns-list">';
-            data.templates.forEach(t => {
+            // Рисуем три кнопки HTML-шаблонов в ряд, без пометок (HTML)
+            const htmlTemplates = (data.templates || []).filter(t => (t.type === 'html' || t.name.toLowerCase().endsWith('.html')));
+            const order = ['giveing','return','sale'];
+            htmlTemplates.sort((a,b)=> order.indexOf(a.name.split('.')[0]) - order.indexOf(b.name.split('.')[0]));
+            let html = '<div style="display:flex; gap:10px; justify-content:space-between; flex-wrap:wrap">';
+            htmlTemplates.forEach(t => {
                 let title = t.name;
                 if (t.name.toLowerCase().startsWith('giveing')) title = 'Акт Выдачи';
                 else if (t.name.toLowerCase().startsWith('return')) title = 'Акт Возврата';
                 else if (t.name.toLowerCase().startsWith('sale')) title = 'Акт Выкупа';
                 const base = t.name.split('.')[0];
-                const isHtml = (t.type === 'html' || t.name.toLowerCase().endsWith('.html'));
-                const isXlsx = (t.type === 'xlsx' || t.name.toLowerCase().endsWith('.xlsx'));
-                html += `<div class="export-column-item">`;
-                html += `<div style="display:flex;gap:8px;flex-wrap:wrap">`;
-                if (isXlsx) {
-                    html += `<button class="inventory-action-btn inventory-btn-primary" onclick="generateAct('${t.name}')">${title} (XLSX)</button>`;
-                }
-                if (isHtml) {
-                    html += `<button class="inventory-action-btn inventory-btn-secondary" onclick="generateActHTML('${base}')">${title} (HTML)</button>`;
-                }
-                html += `</div>`;
-                html += `</div>`;
+                html += `<button class="inventory-action-btn inventory-btn-primary" style="flex:1 1 30%" onclick="generateActHTML('${base}')">${title}</button>`;
             });
             html += '</div>';
             container.innerHTML = html;

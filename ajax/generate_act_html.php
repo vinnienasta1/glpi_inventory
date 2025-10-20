@@ -128,7 +128,8 @@ if ($tableNode) { $tableNode->appendChild($thead); $tableNode->appendChild($tbod
 $trh = $dom->createElement('tr');
 $lowname = mb_strtolower(basename($tplPath));
 if (mb_strpos($lowname,'sale') === 0) {
-    $columns = ['№','Наименование','Инв. номер','Сумма','Комментарий'];
+    // Для выкупа колонка "Комментарий" удалена
+    $columns = ['№','Наименование','Инв. номер','Сумма'];
 } else {
     $columns = ['№','Наименование','Инв. номер','S.N'];
 }
@@ -151,7 +152,7 @@ for ($i = 0; $i < count($items); $i++) {
     $isSale = (mb_strpos($lowname, 'sale') === 0);
     if ($isSale) {
         if ($idxMap['sum'] !== null && $idxMap['sum'] < $cells->length) $cells->item($idxMap['sum'])->nodeValue = '';
-        if ($idxMap['comment'] !== null && $idxMap['comment'] < $cells->length) $cells->item($idxMap['comment'])->nodeValue = (string)($it['otherserial'] ?? '');
+        // Колонка "Комментарий" удалена — ничего не заполняем
     }
     if ($tbody) $tbody->appendChild($tr); else if ($tableNode) $tableNode->appendChild($tr);
 }
