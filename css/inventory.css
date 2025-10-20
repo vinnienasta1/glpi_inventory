@@ -416,6 +416,12 @@
     animation: fadeIn 0.3s ease-out;
 }
 
+/* Разрешаем кликать по полю поиска под НЕактивными оверлеями (если вдруг останутся в DOM) */
+.inventory-modal-overlay.hidden,
+.inventory-modal-overlay[aria-hidden="true"] {
+    pointer-events: none;
+}
+
 .inventory-modal {
     background: white;
     border-radius: 8px;

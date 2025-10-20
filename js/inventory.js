@@ -31,6 +31,17 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
 
+    // Безопасность: если вдруг остались открытые оверлеи, закрываем их
+    function closeAllOverlays() {
+        try {
+            document.querySelectorAll('.inventory-modal-overlay').forEach(el => el.remove());
+        } catch (e) {}
+    }
+    closeAllOverlays();
+    searchInput.disabled = false;
+    searchInput.addEventListener('focus', closeAllOverlays);
+    document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeAllOverlays(); });
+
     // Аудио-обратная связь при добавлении в буфер
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
     const audioState = {
