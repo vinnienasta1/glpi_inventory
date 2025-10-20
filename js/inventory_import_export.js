@@ -20,6 +20,18 @@
     default: return item[key]||'';
   }}
 
+  // Ленивое подключение SheetJS при необходимости
+  function loadXLSX(callback){
+    try{
+      if (typeof XLSX !== 'undefined') { callback && callback(); return; }
+      var s = document.createElement('script');
+      s.src = 'https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js';
+      s.onload = function(){ callback && callback(); };
+      s.onerror = function(){ alert('Не удалось загрузить библиотеку XLSX'); };
+      document.head.appendChild(s);
+    }catch(e){ alert('Не удалось загрузить библиотеку XLSX'); }
+  }
+
   function ensureToolbar(){
     var box = document.querySelector('.inventory-search-box'); if(!box) return null;
     var bar = document.getElementById('inventory-tools-bar'); if(bar) return bar;
@@ -106,7 +118,7 @@
     (function(){var n=document.getElementById('exp-filename');var name=(n&&n.value.trim())? n.value.trim(): 'inventory_export'; if(!/\.txt$/i.test(name)) name += '.txt'; download('\uFEFF'+txt, name, 'text/plain;charset=utf-8;');})();
   }
   function exportXLSX(data, cols){
-    if(typeof XLSX==='undefined'){ alert('Библиотека XLSX не загружена'); return; }
+    if(typeof XLSX==='undefined'){ return loadXLSX(function(){ exportXLSX(data, cols); }); }
     var aoa=[]; aoa.push(cols.map(function(c){return c.name;}));
     data.forEach(function(it){ aoa.push(cols.map(function(c){ return getValueForExport(it, c.key); })); });
     var ws = XLSX.utils.aoa_to_sheet(aoa); var wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Экспорт'); (function(){var n=document.getElementById('exp-filename');var name=(n&&n.value.trim())? n.value.trim(): 'inventory_export'; if(!/\.xlsx$/i.test(name)) name += '.xlsx'; XLSX.writeFile(wb, name);})();
@@ -134,7 +146,11 @@
     var selectedNumbers=[]; var selectedCol=0; var xlsxData=null;
     fileInput.onchange=function(){ var f=fileInput.files[0]; if(!f) return; var name=f.name.toLowerCase(); extra.innerHTML=''; selectedNumbers=[]; xlsxData=null;
       if(name.endsWith('.txt')||name.endsWith('.csv')){ var r=new FileReader(); r.onload=function(e){ var t=e.target.result||''; var nums=t.split(/\r?\n|,|;|\s+/).map(function(n){return n.trim();}).filter(function(n){return n.length;}); selectedNumbers=Array.from(new Set(nums)); extra.innerHTML='<div>Найдено '+selectedNumbers.length+' номеров</div>'; }; r.readAsText(f); }
-      else if(name.endsWith('.xlsx')){ if(typeof XLSX==='undefined'){ extra.innerHTML='<div style="color:#c00">Не загружена библиотека XLSX</div>'; return; }
+      else if(name.endsWith('.xlsx')){ 
+        if(typeof XLSX==='undefined'){ 
+          extra.innerHTML='<div>Загружаю библиотеку XLSX...</div>'; 
+          return loadXLSX(function(){ fileInput.onchange(); });
+        }
         var r=new FileReader(); r.onload=function(e){ var wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'}); var sh=wb.SheetNames[0]; var ws=wb.Sheets[sh]; var range=XLSX.utils.decode_range(ws['!ref']);
           // формируем выпадающий список столбцов
           var select=create('select'); select.id='imp-col'; for(var c=range.s.c;c<=range.e.c;c++){ var opt=create('option'); opt.value=String(c); opt.textContent=XLSX.utils.encode_col(c); select.appendChild(opt);} selectedCol=range.s.c;
