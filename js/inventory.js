@@ -36,7 +36,11 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
             const hasMedia = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
-            if (scanBtn && hasMedia && isMobile) {
+            if (scanBtn && isMobile) {
+                scanBtn.style.display = '';
+                scanBtn.addEventListener('click', openScannerModal);
+            } else if (scanBtn && hasMedia) {
+                // Разрешим и на десктопах при наличии камеры
                 scanBtn.style.display = '';
                 scanBtn.addEventListener('click', openScannerModal);
             }

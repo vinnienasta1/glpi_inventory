@@ -266,20 +266,18 @@
 }
 
 /* Цветовые схемы кнопок */
-.inventory-btn-primary { background: var(--color-primary); color: #fff; }
-.inventory-btn-primary:hover { background: var(--color-primary-hover); }
-
-.inventory-btn-warning { background: var(--color-warning); color: #212529; }
-.inventory-btn-warning:hover { background: var(--color-warning-hover); }
-
-.inventory-btn-info { background: var(--color-info); color: #fff; }
-.inventory-btn-info:hover { background: var(--color-info-hover); }
-
+.inventory-btn-primary,
+.inventory-btn-warning,
+.inventory-btn-info,
+.inventory-btn-secondary,
+.inventory-btn-success { background: var(--color-primary); color: #fff; }
+.inventory-btn-primary:hover,
+.inventory-btn-warning:hover,
+.inventory-btn-info:hover,
+.inventory-btn-secondary:hover,
+.inventory-btn-success:hover { background: var(--color-primary-hover); }
 .inventory-btn-danger { background: var(--color-danger); color: #fff; }
 .inventory-btn-danger:hover { background: var(--color-danger-hover); }
-
-.inventory-btn-secondary { background: var(--color-secondary); color: #fff; }
-.inventory-btn-secondary:hover { background: var(--color-secondary-hover); }
 
 /* Стили для разных типов строк в буфере */
 .inventory-not-found-row {
