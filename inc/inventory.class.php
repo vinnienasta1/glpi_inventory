@@ -78,10 +78,35 @@ class PluginInventoryInventory extends CommonGLPI {
      * @param array $item Данные элемента
      * @return array Расширенная информация
      */
-    static function getExtendedInfo($item) {
+    static function getExtendedInfo($item, $type = null) {
         global $DB;
         
         $extended = $item;
+        
+        // Попытка получить дополнительные поля напрямую из объекта GLPI
+        if ($type && isset($item['id'])) {
+            try {
+                if (class_exists($type)) {
+                    $obj = new $type();
+                    if ($obj->getFromDB((int)$item['id'])) {
+                        // Номер иммобилизации: пытаемся найти один из известных ключей
+                        $imm = '';
+                        if (isset($obj->fields['immobilization_number'])) {
+                            $imm = (string)$obj->fields['immobilization_number'];
+                        } else if (isset($obj->fields['immo_number'])) {
+                            $imm = (string)$obj->fields['immo_number'];
+                        } else if (isset($obj->fields['immobilizationnum'])) {
+                            $imm = (string)$obj->fields['immobilizationnum'];
+                        }
+                        if ($imm !== '') {
+                            $extended['immo_number'] = $imm;
+                        }
+                    }
+                }
+            } catch (Exception $e) {
+                // безопасно игнорируем, оставляя поле пустым
+            }
+        }
         
         // Получаем информацию о группе (департаменте)
         if ($item['groups_id'] > 0) {

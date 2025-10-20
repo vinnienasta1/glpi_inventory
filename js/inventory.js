@@ -1326,7 +1326,7 @@ loadColumnsConfig();
             const userName = first && first.user_name ? first.user_name : '';
             const payload = {
                 template: templateKey,
-                items: actualItems.map(it => ({ name: it.name || '', otherserial: it.otherserial || '', serial: it.serial || '', user_name: it.user_name || '' })),
+                items: actualItems.map(it => ({ name: it.name || '', otherserial: it.otherserial || '', serial: it.serial || '', user_name: it.user_name || '', immo_number: it.immo_number || '' })),
                 issuer_name: issuer,
                 user_name: userName
             };

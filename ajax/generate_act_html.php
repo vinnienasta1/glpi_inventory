@@ -151,7 +151,10 @@ for ($i = 0; $i < count($items); $i++) {
     if ($idxMap['sn'] !== null && $idxMap['sn'] < $cells->length && in_array('S.N',$columns,true)) $cells->item($idxMap['sn'])->nodeValue = (string)($it['serial'] ?? '');
     $isSale = (mb_strpos($lowname, 'sale') === 0);
     if ($isSale) {
-        if ($idxMap['sum'] !== null && $idxMap['sum'] < $cells->length) $cells->item($idxMap['sum'])->nodeValue = '';
+        // В колонку "Сумма" подставляем Номер иммобилизации, если передан
+        if ($idxMap['sum'] !== null && $idxMap['sum'] < $cells->length) {
+            $cells->item($idxMap['sum'])->nodeValue = (string)($it['immo_number'] ?? '');
+        }
         // Колонка "Комментарий" удалена — ничего не заполняем
     }
     if ($tbody) $tbody->appendChild($tr); else if ($tableNode) $tableNode->appendChild($tr);

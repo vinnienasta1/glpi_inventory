@@ -38,7 +38,7 @@ try {
     
     $results = [];
     foreach ($items as $item) {
-        $data = PluginInventoryInventory::getExtendedInfo($item['data']);
+        $data = PluginInventoryInventory::getExtendedInfo($item['data'], $item['type']);
         $type = $item['type'];
         
         $type_name = '';
@@ -67,6 +67,7 @@ try {
             'contact' => isset($data['contact']) ? $data['contact'] : '-',
             'user_name' => isset($data['user_name']) ? $data['user_name'] : '-',
             'comment' => $data['comment'],
+            'immo_number' => isset($data['immo_number']) ? $data['immo_number'] : '',
             'url' => "/front/" . strtolower($type) . ".form.php?id=" . $data['id']
         ];
     }
