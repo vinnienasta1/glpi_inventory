@@ -66,6 +66,14 @@ if ($debug_mode) {
                     <i class="fas fa-search" style="margin-right: 5px;"></i>
                     Поиск
                 </button>
+                <button 
+                    type="button"
+                    id="inventory-scan-btn"
+                    style="padding: 10px 14px; font-size: 16px; background: #17a2b8; color: white; border: none; border-radius: 4px; cursor: pointer; display: none;"
+                    title="Сканировать штрихкод"
+                >
+                    <i class="fas fa-camera"></i>
+                </button>
             </div>
         </form>
         

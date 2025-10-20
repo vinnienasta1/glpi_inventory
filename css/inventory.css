@@ -1,3 +1,24 @@
+/* Палитра и базовые переменные */
+:root {
+    --color-bg: #f7f9fc;
+    --color-surface: #ffffff;
+    --color-border: #e6ebf2;
+    --color-text: #2f3b52;
+    --color-primary: #2463eb;
+    --color-primary-hover: #1e53c7;
+    --color-secondary: #7486a3;
+    --color-secondary-hover: #5e6e88;
+    --color-info: #2bb0ed;
+    --color-info-hover: #2296ca;
+    --color-success: #12b981;
+    --color-success-hover: #0e9669;
+    --color-warning: #f59e0b;
+    --color-warning-hover: #d4880a;
+    --color-danger: #ef4444;
+    --color-danger-hover: #d53636;
+    --radius: 8px;
+    --shadow-sm: 0 2px 6px rgba(15, 23, 42, 0.08);
+}
 /* Стили для плагина Inventory */
 
 .inventory-container {
@@ -6,14 +27,7 @@
     padding: 20px;
 }
 
-.inventory-search-box {
-    background: #f8f9fa;
-    border: 1px solid #dee2e6;
-    border-radius: 8px;
-    padding: 25px;
-    margin-bottom: 30px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
+.inventory-search-box { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius); padding: 16px; margin-bottom: 20px; box-shadow: var(--shadow-sm); }
 
 .inventory-search-input {
     width: 100%;
@@ -98,19 +112,9 @@
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
-.inventory-results-table th {
-    background: #007bff;
-    color: white;
-    padding: 15px 12px;
-    text-align: left;
-    font-weight: 600;
-}
+.inventory-results-table th { background: var(--color-primary); color: #fff; padding: 12px; text-align: left; font-weight: 600; }
 
-.inventory-results-table td {
-    padding: 12px;
-    border-bottom: 1px solid #eee;
-    vertical-align: middle;
-}
+.inventory-results-table td { padding: 12px; border-bottom: 1px solid var(--color-border); vertical-align: middle; }
 
 .inventory-results-table tr:last-child td {
     border-bottom: none;
@@ -252,18 +256,7 @@
 }
 
 /* Базовые стили кнопок */
-.inventory-action-btn {
-    border: none;
-    padding: 8px 12px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 14px;
-    transition: all 0.3s;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    font-weight: 500;
-}
+.inventory-action-btn { border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 14px; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 6px; font-weight: 500; box-shadow: var(--shadow-sm); }
 
 .inventory-action-btn:hover {
     transform: translateY(-1px);
@@ -271,50 +264,20 @@
 }
 
 /* Цветовые схемы кнопок */
-.inventory-btn-primary {
-    background: #007bff;
-    color: white;
-}
+.inventory-btn-primary { background: var(--color-primary); color: #fff; }
+.inventory-btn-primary:hover { background: var(--color-primary-hover); }
 
-.inventory-btn-primary:hover {
-    background: #0056b3;
-}
+.inventory-btn-warning { background: var(--color-warning); color: #212529; }
+.inventory-btn-warning:hover { background: var(--color-warning-hover); }
 
-.inventory-btn-warning {
-    background: #ffc107;
-    color: #212529;
-}
+.inventory-btn-info { background: var(--color-info); color: #fff; }
+.inventory-btn-info:hover { background: var(--color-info-hover); }
 
-.inventory-btn-warning:hover {
-    background: #e0a800;
-}
+.inventory-btn-danger { background: var(--color-danger); color: #fff; }
+.inventory-btn-danger:hover { background: var(--color-danger-hover); }
 
-.inventory-btn-info {
-    background: #17a2b8;
-    color: white;
-}
-
-.inventory-btn-info:hover {
-    background: #138496;
-}
-
-.inventory-btn-danger {
-    background: #dc3545;
-    color: white;
-}
-
-.inventory-btn-danger:hover {
-    background: #c82333;
-}
-
-.inventory-btn-secondary {
-    background: #6c757d;
-    color: white;
-}
-
-.inventory-btn-secondary:hover {
-    background: #545b62;
-}
+.inventory-btn-secondary { background: var(--color-secondary); color: #fff; }
+.inventory-btn-secondary:hover { background: var(--color-secondary-hover); }
 
 /* Стили для разных типов строк в буфере */
 .inventory-not-found-row {

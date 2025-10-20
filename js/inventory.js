@@ -25,10 +25,88 @@ document.addEventListener('DOMContentLoaded', function() {
     const searchForm = document.getElementById('inventory-search-form');
     const searchInput = document.getElementById('inventory-search-input');
     const searchBtn = document.getElementById('inventory-search-btn');
+    const scanBtn = document.getElementById('inventory-scan-btn');
     const resultsContainer = document.getElementById('inventory-results');
     
     if (!searchForm || !searchInput || !searchBtn || !resultsContainer) {
         return;
+    }
+    // Показать кнопку сканера на мобильных/при поддержке камеры
+    (async function initScannerButton(){
+        try {
+            const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+            const hasMedia = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+            if (scanBtn && hasMedia && isMobile) {
+                scanBtn.style.display = '';
+                scanBtn.addEventListener('click', openScannerModal);
+            }
+        } catch(e){}
+    })();
+
+    async function openScannerModal(){
+        const modalHtml = `
+            <div class="inventory-modal-overlay" onclick="closeScannerModal()">
+              <div class="inventory-modal scanner-modal" onclick="event.stopPropagation()">
+                <div class="inventory-modal-header">
+                  <h3><i class="fas fa-camera"></i> Сканирование штрихкода</h3>
+                  <button class="inventory-modal-close" onclick="closeScannerModal()">&times;</button>
+                </div>
+                <div class="inventory-modal-body">
+                  <video id="scanner-video" class="scanner-video" playsinline></video>
+                  <div class="scanner-actions">
+                    <button class="inventory-action-btn inventory-btn-secondary" onclick="closeScannerModal()">Закрыть</button>
+                  </div>
+                </div>
+              </div>
+            </div>`;
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        startBarcodeScanner();
+    }
+
+    window.closeScannerModal = function(){
+        try { if (window.__scannerStream) { window.__scannerStream.getTracks().forEach(t=>t.stop()); window.__scannerStream = null; } } catch(e){}
+        const m = document.querySelector('.inventory-modal-overlay');
+        if (m) m.remove();
+    }
+
+    async function startBarcodeScanner(){
+        const video = document.getElementById('scanner-video');
+        if (!video) return;
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+            window.__scannerStream = stream;
+            video.srcObject = stream;
+            await video.play();
+
+            const hasBarcodeDetector = 'BarcodeDetector' in window;
+            if (hasBarcodeDetector) {
+                const detector = new window.BarcodeDetector({ formats: ['code_128','ean_13','ean_8','upc_a','upc_e','code_39','qr_code'] });
+                const scan = async () => {
+                    if (!video.srcObject) return;
+                    try {
+                        const codes = await detector.detect(video);
+                        if (codes && codes.length > 0) {
+                            const val = (codes[0].rawValue || codes[0].rawValue === 0) ? String(codes[0].rawValue) : '';
+                            if (val) {
+                                closeScannerModal();
+                                searchInput.value = val;
+                                performSearch();
+                                return;
+                            }
+                        }
+                    } catch(e){}
+                    requestAnimationFrame(scan);
+                };
+                requestAnimationFrame(scan);
+            } else {
+                // Фоллбэк простой: слушаем тапы по экрану и делаем снимок — опущено для краткости
+                showNotification('Сканер штрихкодов не поддерживается на этом устройстве', 'warning');
+            }
+        } catch (err) {
+            console.error(err);
+            showNotification('Не удалось открыть камеру', 'error');
+            closeScannerModal();
+        }
     }
 
     // Безопасность: если вдруг остались открытые оверлеи, закрываем их
