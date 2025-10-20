@@ -25,119 +25,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const searchForm = document.getElementById('inventory-search-form');
     const searchInput = document.getElementById('inventory-search-input');
     const searchBtn = document.getElementById('inventory-search-btn');
-    const scanBtn = document.getElementById('inventory-scan-btn');
+    
     const resultsContainer = document.getElementById('inventory-results');
     
     if (!searchForm || !searchInput || !searchBtn || !resultsContainer) {
         return;
     }
-    // Показать кнопку сканера на мобильных/при поддержке камеры
-    (async function initScannerButton(){
-        try {
-            const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-            const hasMedia = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
-            if (scanBtn && isMobile) {
-                scanBtn.style.display = '';
-                scanBtn.addEventListener('click', openScannerModal);
-            } else if (scanBtn && hasMedia) {
-                // Разрешим и на десктопах при наличии камеры
-                scanBtn.style.display = '';
-                scanBtn.addEventListener('click', openScannerModal);
-            }
-        } catch(e){}
-    })();
-
-    async function openScannerModal(){
-        const modalHtml = `
-            <div class="inventory-modal-overlay" onclick="closeScannerModal()">
-              <div class="inventory-modal scanner-modal" onclick="event.stopPropagation()">
-                <div class="inventory-modal-header">
-                  <h3><i class="fas fa-camera"></i> Сканирование штрихкода</h3>
-                  <button class="inventory-modal-close" onclick="closeScannerModal()">&times;</button>
-                </div>
-                <div class="inventory-modal-body">
-                  <video id="scanner-video" class="scanner-video" playsinline muted autoplay></video>
-                  <div class="scanner-actions">
-                    <button class="inventory-action-btn inventory-btn-secondary" onclick="closeScannerModal()">Закрыть</button>
-                  </div>
-                </div>
-              </div>
-            </div>`;
-        document.body.insertAdjacentHTML('beforeend', modalHtml);
-        startBarcodeScanner();
-    }
-
-    window.closeScannerModal = function(){
-        try { if (window.__scannerStream) { window.__scannerStream.getTracks().forEach(t=>t.stop()); window.__scannerStream = null; } } catch(e){}
-        const m = document.querySelector('.inventory-modal-overlay');
-        if (m) m.remove();
-    }
-
-    async function startBarcodeScanner(){
-        const video = document.getElementById('scanner-video');
-        if (!video) return;
-        try {
-            // Разрешаем тест в HTTP: предупреждаем, но продолжаем
-            if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
-                showNotification('Внимание: доступ к камере в HTTP может блокироваться браузером. Попробуем открыть…', 'warning');
-            }
-            let stream = null;
-            const constraintsPrimary = { video: { facingMode: { ideal: 'environment' } }, audio: false };
-            const constraintsFallback = { video: true, audio: false };
-            try {
-                stream = await navigator.mediaDevices.getUserMedia(constraintsPrimary);
-            } catch(e1) {
-                try {
-                    stream = await navigator.mediaDevices.getUserMedia(constraintsFallback);
-                } catch(e2) {
-                    // iOS Safari fallback через legacy webkitGetUserMedia, если есть
-                    const gum = (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) || navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
-                    if (gum) {
-                        stream = await new Promise((resolve, reject) => {
-                            try {
-                                (gum.call(navigator.mediaDevices || navigator, constraintsFallback, resolve, reject));
-                            } catch(err) { reject(err); }
-                        });
-                    } else {
-                        throw e2;
-                    }
-                }
-            }
-            window.__scannerStream = stream;
-            video.srcObject = stream;
-            video.setAttribute('playsinline','true');
-            video.muted = true;
-            await video.play();
-
-            const hasBarcodeDetector = 'BarcodeDetector' in window;
-            if (hasBarcodeDetector) {
-                const detector = new window.BarcodeDetector({ formats: ['code_128','ean_13','ean_8','upc_a','upc_e','code_39','qr_code'] });
-                const scan = async () => {
-                    if (!video.srcObject) return;
-                    try {
-                        const codes = await detector.detect(video);
-                        if (codes && codes.length > 0) {
-                            const val = (codes[0].rawValue || codes[0].rawValue === 0) ? String(codes[0].rawValue) : '';
-                            if (val) {
-                                closeScannerModal();
-                                searchInput.value = val;
-                                performSearch();
-                                return;
-                            }
-                        }
-                    } catch(e){}
-                    requestAnimationFrame(scan);
-                };
-                requestAnimationFrame(scan);
-            } else {
-                // Фоллбэк простой: слушаем тапы по экрану и делаем снимок — опущено для краткости
-                showNotification('Сканер штрихкодов не поддерживается на этом устройстве', 'warning');
-            }
-        } catch (err) {
-            console.error(err);
-            showNotification('Не удалось открыть камеру. Проверьте права доступа к камере и HTTPS.', 'error');
-        }
-    }
+    
 
     // Безопасность: если вдруг остались открытые оверлеи, закрываем их
     function closeAllOverlays() {
@@ -596,9 +490,7 @@ loadColumnsConfig();
                         <button class="inventory-action-btn inventory-btn-info" onclick="showColumnsModal()"><i class="fas fa-columns"></i> <span class="btn-text">Столбцы</span></button>
                         <button class="inventory-action-btn inventory-btn-danger" onclick="clearBuffer()"><i class="fas fa-trash"></i> <span class="btn-text">Очистить буфер</span></button>
                     </div>
-                    <div class="inventory-buffer-actions mobile-actions" style="display:none">
-                        <button class="inventory-action-btn inventory-btn-primary" onclick="toggleActionsMenu()"><i class="fas fa-ellipsis-h"></i> <span class="btn-text">Действия</span></button>
-                    </div>
+                    
                 </div>
                 <table class="inventory-results-table">
                     <thead>
@@ -634,7 +526,7 @@ loadColumnsConfig();
         `;
         
         resultsContainer.innerHTML = html;
-        setupResponsiveActions();
+        
         
         // Обновляем состояние кнопок экспорта
         updateExportButtonsState();
@@ -655,54 +547,7 @@ loadColumnsConfig();
         return text.substring(0, maxLength - 3) + '...';
     }
 
-    function setupResponsiveActions(){
-        const isMobile = window.matchMedia('(max-width: 768px)').matches;
-        const desktop = document.querySelector('.desktop-actions');
-        const mobile = document.querySelector('.mobile-actions');
-        if (!desktop || !mobile) return;
-        if (isMobile) {
-            desktop.style.display = 'none';
-            mobile.style.display = '';
-        } else {
-            desktop.style.display = '';
-            mobile.style.display = 'none';
-        }
-    }
-
-    window.toggleActionsMenu = function(ev){
-        if (ev && ev.stopPropagation) ev.stopPropagation();
-        // Простое контекстное меню c действиями
-        const existing = document.getElementById('actions-menu-dropdown');
-        if (existing) { existing.remove(); return; }
-        const menu = document.createElement('div');
-        menu.id = 'actions-menu-dropdown';
-        menu.style.position = 'absolute';
-        menu.style.right = '12px';
-        menu.style.top = '60px';
-        menu.style.background = '#fff';
-        menu.style.border = '1px solid #e6ebf2';
-        menu.style.borderRadius = '8px';
-        menu.style.boxShadow = '0 10px 25px rgba(0,0,0,0.1)';
-        menu.style.zIndex = '1002';
-        menu.style.minWidth = '200px';
-        menu.innerHTML = `
-            <div style="padding:8px; display:flex; flex-direction:column; gap:6px;">
-                <button class="inventory-action-btn inventory-btn-secondary" onclick="toggleSound(); closeActionsMenu()"><i class="fas ${soundIcon}"></i> Звук</button>
-                <button class="inventory-action-btn inventory-btn-primary" onclick="keepActualItems(); closeActionsMenu()"><i class="fas fa-filter"></i> Оставить актуальные</button>
-                <button class="inventory-action-btn inventory-btn-warning" onclick="showBulkEditModal(); closeActionsMenu()"><i class="fas fa-edit"></i> Изменить</button>
-                <button class="inventory-action-btn inventory-btn-secondary" onclick="showLogsModal(); closeActionsMenu()"><i class="fas fa-list"></i> Логи</button>
-                <button class="inventory-action-btn inventory-btn-success" onclick="showActsModal(); closeActionsMenu()"><i class="fas fa-file-signature"></i> Акты</button>
-                <button class="inventory-action-btn inventory-btn-info" onclick="showColumnsModal(); closeActionsMenu()"><i class="fas fa-columns"></i> Столбцы</button>
-                <button class="inventory-action-btn inventory-btn-danger" onclick="clearBuffer(); closeActionsMenu()"><i class="fas fa-trash"></i> Очистить буфер</button>
-            </div>`;
-        document.body.appendChild(menu);
-        setTimeout(() => document.addEventListener('click', closeActionsMenu, { once: true }), 0);
-    }
-
-    window.closeActionsMenu = function(){
-        const m = document.getElementById('actions-menu-dropdown');
-        if (m) m.remove();
-    }
+    
     
     // Глобальная функция очистки буфера (вызывается из HTML)
     window.clearBuffer = function() {

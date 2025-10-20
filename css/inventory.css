@@ -805,13 +805,7 @@
     }
 }
 
-/* Квадратные кнопки поиска/камеры на очень узких экранах */
-@media (max-width: 480px) {
-    #inventory-search-form > div { gap: 8px; display:flex; align-items:center; }
-    #inventory-search-input { font-size: 16px; }
-    #inventory-search-btn, #inventory-scan-btn { width: 44px !important; height: 44px !important; padding: 0 !important; min-width:44px; min-height:44px; display: inline-flex; align-items:center; justify-content:center; }
-    .search-button .btn-text { display: none !important; }
-}
+/* (мобильные специфичные правки для кнопок поиска/камеры отменены) */
 
 /* Панель импорта/экспорта */
 .inventory-import-export-panel {
