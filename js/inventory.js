@@ -780,7 +780,17 @@ loadColumnsConfig();
             return;
         }
         
-        const actualItems = itemsBuffer.filter(item => !item.isNotFound);
+        // Берём только актуальные: не NotFound, не дубликаты, и уникальные по type_class+id
+        const filtered = itemsBuffer.filter(item => !item.isNotFound && !item.isDuplicate);
+        const seen = new Set();
+        const actualItems = [];
+        filtered.forEach(item => {
+            const key = `${item.type_class}-${item.id}`;
+            if (!seen.has(key)) {
+                seen.add(key);
+                actualItems.push(item);
+            }
+        });
         
         if (actualItems.length === 0) {
             showNotification('Нет позиций для изменения', 'warning');
@@ -1166,6 +1176,7 @@ loadColumnsConfig();
                     <td>${changes || '-'}</td>
                 </tr>`;
             }).join('');
+            const whenFmt = log.when_fmt || log.when || '-';
             const detailsHtml = `
                 <div class="inventory-modal-overlay log-details-overlay" onclick="closeLogDetails()">
                   <div class="inventory-modal" style="max-width: 1200px; width: 95vw;" onclick="event.stopPropagation()">
@@ -1174,7 +1185,7 @@ loadColumnsConfig();
                       <button class="inventory-modal-close" onclick="closeLogDetails()">&times;</button>
                     </div>
                     <div class="inventory-modal-body">
-                      <div style="margin-bottom:8px">Когда: ${log.when || '-'} | Пользователь: ${escapeHtml(log.user_name||'')}</div>
+                      <div style="margin-bottom:8px">Когда: ${whenFmt} | Пользователь: ${escapeHtml(log.user_name||'')}</div>
                       <table class="inventory-results-table">
                         <thead><tr><th>Инв. номер</th><th>Наименование</th><th>Серийный</th><th>Изменения</th></tr></thead>
                         <tbody>${rows || '<tr><td colspan="4">Пусто</td></tr>'}</tbody>

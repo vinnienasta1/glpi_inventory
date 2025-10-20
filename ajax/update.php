@@ -40,6 +40,16 @@ if (!isset($input['items']) || !isset($input['changes'])) {
 }
 
 $items = $input['items'];
+$unique = [];
+$filtered_items = [];
+foreach ($items as $it) {
+    if (!empty($it['isNotFound']) || !empty($it['isDuplicate'])) continue;
+    $key = ($it['type_class'] ?? '') . ':' . ($it['id'] ?? '');
+    if (isset($unique[$key])) continue;
+    $unique[$key] = true;
+    $filtered_items[] = $it;
+}
+$items = $filtered_items;
 $changes = $input['changes'];
 
 $results = [
