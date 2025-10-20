@@ -20,12 +20,22 @@ Session::checkLoginUser();
 header('Content-Type: application/json');
 if (session_status() === PHP_SESSION_NONE) { @session_start(); }
 
-if (empty($_SESSION['inventory_last_mass_update'])) {
+// Можно откатывать по id записи из журнала, или последнее
+$log = null;
+if (!empty($_POST['log_id'])) {
+    $logId = (string)$_POST['log_id'];
+    $logs = $_SESSION['inventory_mass_updates_log'] ?? [];
+    foreach (array_reverse($logs) as $l) {
+        if (!empty($l['id']) && $l['id'] === $logId) { $log = $l; break; }
+    }
+} else {
+    $log = $_SESSION['inventory_last_mass_update'] ?? null;
+}
+
+if (!$log) {
     echo json_encode(['success' => false, 'error' => 'Нет изменений для отката']);
     exit;
 }
-
-$log = $_SESSION['inventory_last_mass_update'];
 $items = $log['items'] ?? [];
 $ok = 0; $fail = 0; $errors = [];
 
@@ -47,7 +57,7 @@ foreach ($items as $entry) {
     if ($itemClass->update($data)) { $ok++; } else { $fail++; $errors[] = "Не удалось откатить объект ID: $id"; }
 }
 
-// Очищаем лог после попытки отката
+// Очищаем «последний», но общий журнал сохраняем (можно решить иначе)
 unset($_SESSION['inventory_last_mass_update']);
 
 echo json_encode(['success' => true, 'results' => ['reverted' => $ok, 'failed' => $fail, 'errors' => $errors]]);

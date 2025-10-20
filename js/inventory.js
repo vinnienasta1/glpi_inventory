@@ -478,8 +478,8 @@ loadColumnsConfig();
                         <button class="inventory-action-btn inventory-btn-warning" onclick="showBulkEditModal()">
                             <i class="fas fa-edit"></i> Изменить
                         </button>
-                        <button class="inventory-action-btn inventory-btn-secondary" onclick="undoLastMassUpdate()" title="Откатить последнее изменение">
-                            <i class="fas fa-undo"></i> Откат
+                        <button class="inventory-action-btn inventory-btn-secondary" onclick="showLogsModal()" title="Журнал изменений">
+                            <i class="fas fa-list"></i> Логи
                         </button>
                         <button class="inventory-action-btn inventory-btn-success" onclick="showActsModal()">
                             <i class="fas fa-file-signature"></i> Акты
@@ -1050,6 +1050,64 @@ loadColumnsConfig();
             showNotification(`Откат выполнен. Успешно: ${r.reverted || 0}, Ошибок: ${r.failed || 0}`, (r.failed>0?'warning':'success'));
         } catch (e) {
             console.error(e);
+            showNotification('Ошибка при откате', 'error');
+        }
+    }
+
+    // Модальное окно журнала изменений
+    window.showLogsModal = function() {
+        const headers = {};
+        if (typeof GLPI_CSRF_TOKEN !== 'undefined') headers['X-Glpi-Csrf-Token'] = GLPI_CSRF_TOKEN;
+        fetch('/plugins/inventory/ajax/logs.php', { method:'GET', headers, credentials:'same-origin'})
+        .then(r=>r.json())
+        .then(data => {
+            if (!data.success) { showNotification('Не удалось загрузить журнал', 'error'); return; }
+            const logs = data.logs || [];
+            const htmlRows = logs.slice().reverse().map(l => {
+                const when = l.when || '-';
+                const count = (l.items||[]).length;
+                const id = l.id || '';
+                return `<tr><td>${when}</td><td>${count}</td><td><button class="inventory-action-btn inventory-btn-secondary" onclick="undoById('${id}')">Откат</button></td></tr>`;
+            }).join('');
+            const modalHtml = `
+                <div class="inventory-modal-overlay" onclick="closeLogsModal()">
+                  <div class="inventory-modal" onclick="event.stopPropagation()">
+                    <div class="inventory-modal-header">
+                      <h3>Журнал массовых изменений</h3>
+                      <button class="inventory-modal-close" onclick="closeLogsModal()">&times;</button>
+                    </div>
+                    <div class="inventory-modal-body">
+                      <table class="inventory-results-table">
+                        <thead><tr><th>Когда</th><th>Позиций</th><th>Действия</th></tr></thead>
+                        <tbody>${htmlRows || '<tr><td colspan="3">Пусто</td></tr>'}</tbody>
+                      </table>
+                    </div>
+                    <div class="inventory-modal-footer">
+                      <button class="inventory-action-btn inventory-btn-secondary" onclick="closeLogsModal()">Закрыть</button>
+                    </div>
+                  </div>
+                </div>`;
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+        })
+        .catch(()=>showNotification('Ошибка загрузки журнала', 'error'));
+    }
+
+    window.closeLogsModal = function(){
+        const m = document.querySelector('.inventory-modal-overlay');
+        if (m) m.remove();
+    }
+
+    window.undoById = async function(logId){
+        try {
+            const headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
+            if (typeof GLPI_CSRF_TOKEN !== 'undefined') headers['X-Glpi-Csrf-Token'] = GLPI_CSRF_TOKEN;
+            const resp = await fetch('/plugins/inventory/ajax/undo.php', { method:'POST', headers, body: 'log_id=' + encodeURIComponent(logId), credentials:'same-origin'});
+            const data = await resp.json();
+            if (!data.success) { showNotification('Откат не выполнен: ' + (data.error || ''), 'error'); return; }
+            const r = data.results || {};
+            showNotification(`Откат выполнен. Успешно: ${r.reverted || 0}, Ошибок: ${r.failed || 0}`, (r.failed>0?'warning':'success'));
+            closeLogsModal();
+        } catch(e){
             showNotification('Ошибка при откате', 'error');
         }
     }

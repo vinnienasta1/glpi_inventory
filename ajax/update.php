@@ -27,6 +27,9 @@ header('Content-Type: application/json');
 if (session_status() === PHP_SESSION_NONE) {
     @session_start();
 }
+if (!isset($_SESSION['inventory_mass_updates_log']) || !is_array($_SESSION['inventory_mass_updates_log'])) {
+    $_SESSION['inventory_mass_updates_log'] = [];
+}
 
 // Получаем данные из POST
 $input = json_decode(file_get_contents('php://input'), true);
@@ -169,5 +172,8 @@ echo json_encode([
 // Сохраняем лог для возможного отката (только если были успешные обновления)
 if ($results['success'] > 0 && !empty($undoLog['items'])) {
     $_SESSION['inventory_last_mass_update'] = $undoLog;
+    // Добавляем в общий журнал
+    $undoLog['id'] = uniqid('log_', true);
+    $_SESSION['inventory_mass_updates_log'][] = $undoLog;
 }
 ?>
