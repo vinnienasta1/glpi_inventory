@@ -107,6 +107,29 @@ class PluginInventoryInventory extends CommonGLPI {
                 // безопасно игнорируем, оставляя поле пустым
             }
         }
+
+        // Номер иммобилизации из glpi_infocoms (официальная таблица фин. информации)
+        try {
+            if ($type && isset($item['id'])) {
+                $req = $DB->request([
+                    'SELECT' => ['immo_number'],
+                    'FROM'   => 'glpi_infocoms',
+                    'WHERE'  => [
+                        'items_id' => (int)$item['id'],
+                        'itemtype' => (string)$type
+                    ],
+                    'LIMIT'  => 1
+                ]);
+                foreach ($req as $row) {
+                    if (!empty($row['immo_number'])) {
+                        $extended['immo_number'] = (string)$row['immo_number'];
+                    }
+                    break;
+                }
+            }
+        } catch (Exception $e) {
+            // игнорируем ошибки выборки
+        }
         
         // Получаем информацию о группе (департаменте)
         if ($item['groups_id'] > 0) {
