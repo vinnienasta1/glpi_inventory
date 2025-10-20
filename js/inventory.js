@@ -56,7 +56,7 @@ document.addEventListener('DOMContentLoaded', function() {
                   <button class="inventory-modal-close" onclick="closeScannerModal()">&times;</button>
                 </div>
                 <div class="inventory-modal-body">
-                  <video id="scanner-video" class="scanner-video" playsinline></video>
+                  <video id="scanner-video" class="scanner-video" playsinline muted autoplay></video>
                   <div class="scanner-actions">
                     <button class="inventory-action-btn inventory-btn-secondary" onclick="closeScannerModal()">Закрыть</button>
                   </div>
@@ -77,9 +77,21 @@ document.addEventListener('DOMContentLoaded', function() {
         const video = document.getElementById('scanner-video');
         if (!video) return;
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+            if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+                showNotification('Для работы камеры требуется HTTPS или localhost', 'warning');
+            }
+            let stream = null;
+            const constraintsPrimary = { video: { facingMode: { ideal: 'environment' } }, audio: false };
+            const constraintsFallback = { video: true, audio: false };
+            try {
+                stream = await navigator.mediaDevices.getUserMedia(constraintsPrimary);
+            } catch(e1) {
+                stream = await navigator.mediaDevices.getUserMedia(constraintsFallback);
+            }
             window.__scannerStream = stream;
             video.srcObject = stream;
+            video.setAttribute('playsinline','true');
+            video.muted = true;
             await video.play();
 
             const hasBarcodeDetector = 'BarcodeDetector' in window;
@@ -108,8 +120,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         } catch (err) {
             console.error(err);
-            showNotification('Не удалось открыть камеру', 'error');
-            closeScannerModal();
+            showNotification('Не удалось открыть камеру. Проверьте права доступа к камере и HTTPS.', 'error');
         }
     }
 
@@ -561,30 +572,17 @@ loadColumnsConfig();
             <div class="inventory-buffer-container">
                 <div class="inventory-buffer-header">
                     <h3>В буфере: <span class="buffer-count">${itemsBuffer.length}</span>; Актуальных: <span class="actual-count">${uniqueActualCount}</span></h3>
-                    <div class="inventory-buffer-actions">
-                        <button class="inventory-action-btn inventory-btn-secondary" onclick="toggleSound()" title="Звук">
-                            <i class="fas ${soundIcon}"></i>
-                        </button>
-                        <button class="inventory-action-btn inventory-btn-primary" onclick="keepActualItems()">
-                            <i class="fas fa-filter"></i> Оставить актуальные
-                        </button>
-                        <button class="inventory-action-btn inventory-btn-warning" onclick="showBulkEditModal()">
-                            <i class="fas fa-edit"></i> Изменить
-                        </button>
-                        <button class="inventory-action-btn inventory-btn-secondary" onclick="showLogsModal()" title="Журнал изменений">
-                            <i class="fas fa-list"></i> Логи
-                        </button>
-                        <button class="inventory-action-btn inventory-btn-success" onclick="showActsModal()">
-                            <i class="fas fa-file-signature"></i> Акты
-                        </button>
-                        <!-- removed old Export button -->
-                        <!-- removed old Import button -->
-                        <button class="inventory-action-btn inventory-btn-info" onclick="showColumnsModal()">
-                            <i class="fas fa-columns"></i> Столбцы
-                        </button>
-                        <button class="inventory-action-btn inventory-btn-danger" onclick="clearBuffer()">
-                            <i class="fas fa-trash"></i> Очистить буфер
-                        </button>
+                    <div class="inventory-buffer-actions desktop-actions">
+                        <button class="inventory-action-btn inventory-btn-secondary" onclick="toggleSound()" title="Звук"><i class="fas ${soundIcon}"></i></button>
+                        <button class="inventory-action-btn inventory-btn-primary" onclick="keepActualItems()"><i class="fas fa-filter"></i> <span class="btn-text">Оставить актуальные</span></button>
+                        <button class="inventory-action-btn inventory-btn-warning" onclick="showBulkEditModal()"><i class="fas fa-edit"></i> <span class="btn-text">Изменить</span></button>
+                        <button class="inventory-action-btn inventory-btn-secondary" onclick="showLogsModal()" title="Журнал изменений"><i class="fas fa-list"></i> <span class="btn-text">Логи</span></button>
+                        <button class="inventory-action-btn inventory-btn-success" onclick="showActsModal()"><i class="fas fa-file-signature"></i> <span class="btn-text">Акты</span></button>
+                        <button class="inventory-action-btn inventory-btn-info" onclick="showColumnsModal()"><i class="fas fa-columns"></i> <span class="btn-text">Столбцы</span></button>
+                        <button class="inventory-action-btn inventory-btn-danger" onclick="clearBuffer()"><i class="fas fa-trash"></i> <span class="btn-text">Очистить буфер</span></button>
+                    </div>
+                    <div class="inventory-buffer-actions mobile-actions" style="display:none">
+                        <button class="inventory-action-btn inventory-btn-primary" onclick="toggleActionsMenu()"><i class="fas fa-ellipsis-h"></i> <span class="btn-text">Действия</span></button>
                     </div>
                 </div>
                 <table class="inventory-results-table">
@@ -621,6 +619,7 @@ loadColumnsConfig();
         `;
         
         resultsContainer.innerHTML = html;
+        setupResponsiveActions();
         
         // Обновляем состояние кнопок экспорта
         updateExportButtonsState();
@@ -639,6 +638,54 @@ loadColumnsConfig();
     function truncateText(text, maxLength) {
         if (!text || text.length <= maxLength) return text;
         return text.substring(0, maxLength - 3) + '...';
+    }
+
+    function setupResponsiveActions(){
+        const isMobile = window.matchMedia('(max-width: 768px)').matches;
+        const desktop = document.querySelector('.desktop-actions');
+        const mobile = document.querySelector('.mobile-actions');
+        if (!desktop || !mobile) return;
+        if (isMobile) {
+            desktop.style.display = 'none';
+            mobile.style.display = '';
+        } else {
+            desktop.style.display = '';
+            mobile.style.display = 'none';
+        }
+    }
+
+    window.toggleActionsMenu = function(){
+        // Простое контекстное меню c действиями
+        const existing = document.getElementById('actions-menu-dropdown');
+        if (existing) { existing.remove(); return; }
+        const menu = document.createElement('div');
+        menu.id = 'actions-menu-dropdown';
+        menu.style.position = 'absolute';
+        menu.style.right = '12px';
+        menu.style.top = '60px';
+        menu.style.background = '#fff';
+        menu.style.border = '1px solid #e6ebf2';
+        menu.style.borderRadius = '8px';
+        menu.style.boxShadow = '0 10px 25px rgba(0,0,0,0.1)';
+        menu.style.zIndex = '1002';
+        menu.style.minWidth = '200px';
+        menu.innerHTML = `
+            <div style="padding:8px; display:flex; flex-direction:column; gap:6px;">
+                <button class="inventory-action-btn inventory-btn-secondary" onclick="toggleSound(); closeActionsMenu()"><i class="fas ${soundIcon}"></i> Звук</button>
+                <button class="inventory-action-btn inventory-btn-primary" onclick="keepActualItems(); closeActionsMenu()"><i class="fas fa-filter"></i> Оставить актуальные</button>
+                <button class="inventory-action-btn inventory-btn-warning" onclick="showBulkEditModal(); closeActionsMenu()"><i class="fas fa-edit"></i> Изменить</button>
+                <button class="inventory-action-btn inventory-btn-secondary" onclick="showLogsModal(); closeActionsMenu()"><i class="fas fa-list"></i> Логи</button>
+                <button class="inventory-action-btn inventory-btn-success" onclick="showActsModal(); closeActionsMenu()"><i class="fas fa-file-signature"></i> Акты</button>
+                <button class="inventory-action-btn inventory-btn-info" onclick="showColumnsModal(); closeActionsMenu()"><i class="fas fa-columns"></i> Столбцы</button>
+                <button class="inventory-action-btn inventory-btn-danger" onclick="clearBuffer(); closeActionsMenu()"><i class="fas fa-trash"></i> Очистить буфер</button>
+            </div>`;
+        document.body.appendChild(menu);
+        document.addEventListener('click', closeActionsMenu, { once: true });
+    }
+
+    window.closeActionsMenu = function(){
+        const m = document.getElementById('actions-menu-dropdown');
+        if (m) m.remove();
     }
     
     // Глобальная функция очистки буфера (вызывается из HTML)
