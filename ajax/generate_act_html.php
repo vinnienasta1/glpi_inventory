@@ -114,24 +114,22 @@ if ($rows && $rows->length > 0) {
 
     // Очищаем все строки данных (кроме заголовка)
     for ($ri = $rows->length - 1; $ri >= 1; $ri--) {
-        $rows->item($ri)->parentNode->removeChild($rows->item($ri));
+        $rowNode = $rows->item($ri);
+        if ($rowNode && $rowNode->parentNode) {
+            $rowNode->parentNode->removeChild($rowNode);
+        }
     }
 
     // Генерируем столько строк, сколько элементов
+    $tableNode = $xpath->query('(//table)[1]')->item(0);
     $tbody = $xpath->query('(//table)[1]/tbody')->item(0);
-    if (!$tbody) { $tbody = $xpath->query('(//table)[1]')->item(0); }
+    if (!$tbody && $tableNode) { $tbody = $dom->createElement('tbody'); $tableNode->appendChild($tbody); }
     for ($i = 0; $i < count($items); $i++) {
         $it = $items[$i];
         $tr = $dom->createElement('tr');
         // Под номер
-        if ($idxMap['num'] !== null) {
-            for ($c = 0; $c <= max($idxMap); $c++) {
-                $tr->appendChild($dom->createElement('td', ''));
-            }
-        }
-        $cells = $tr->getElementsByTagName('td');
-        // Если в шаблоне нет tbody/строк, создаём ячейки по числу колонок заголовка
-        if ($cells->length === 0 && $headerCells) {
+        // Создаём ячейки по числу колонок заголовка
+        if ($headerCells) {
             for ($c = 0; $c < $headerCells->length; $c++) $tr->appendChild($dom->createElement('td', ''));
         }
         $cells = $tr->getElementsByTagName('td');

@@ -158,7 +158,7 @@ window.getCellValue = function(item, columnKey) {
         case 'comment':
             return `
                 <div class="comment-cell" data-idx="${item.index}">
-                    <span class="comment-text" ondblclick="startEditComment(${item.index})" title="Двойной клик для редактирования">${escapeHtml(truncateText(item.comment || '-', 30))}</span>
+                    <span class="comment-text" style="white-space:pre-wrap;" ondblclick="startEditComment(${item.index})" title="Двойной клик для редактирования">${escapeHtml(item.comment || '-')}</span>
                     <button class="inventory-action-btn inventory-btn-secondary" onclick="startEditComment(${item.index})" title="Редактировать">
                         <i class="fas fa-edit"></i>
                     </button>
@@ -252,9 +252,14 @@ loadColumnsConfig();
             body: formData,
             credentials: 'same-origin'
         })
-        .then(response => {
+        .then(async response => {
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            const ct = response.headers.get('content-type') || '';
+            if (ct.indexOf('application/json') === -1) {
+                const text = await response.text();
+                throw new Error('Некорректный ответ сервера (ожидали JSON). Ответ: ' + text.slice(0, 120));
             }
             return response.json();
         })
