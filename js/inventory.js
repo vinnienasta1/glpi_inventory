@@ -478,6 +478,9 @@ loadColumnsConfig();
                         <button class="inventory-action-btn inventory-btn-warning" onclick="showBulkEditModal()">
                             <i class="fas fa-edit"></i> Изменить
                         </button>
+                        <button class="inventory-action-btn inventory-btn-secondary" onclick="undoLastMassUpdate()" title="Откатить последнее изменение">
+                            <i class="fas fa-undo"></i> Откат
+                        </button>
                         <button class="inventory-action-btn inventory-btn-success" onclick="showActsModal()">
                             <i class="fas fa-file-signature"></i> Акты
                         </button>
@@ -1030,6 +1033,24 @@ loadColumnsConfig();
         } catch (e) {
             console.error(e);
             showNotification('Ошибка формирования акта', 'error');
+        }
+    }
+
+    // Откат последнего массового изменения
+    window.undoLastMassUpdate = async function() {
+        try {
+            const headers = {};
+            if (typeof GLPI_CSRF_TOKEN !== 'undefined') headers['X-Glpi-Csrf-Token'] = GLPI_CSRF_TOKEN;
+            const resp = await fetch('/plugins/inventory/ajax/undo.php', {
+                method: 'POST', headers, credentials: 'same-origin'
+            });
+            const data = await resp.json();
+            if (!data.success) { showNotification('Откат не выполнен: ' + (data.error || ''), 'error'); return; }
+            const r = data.results || {};
+            showNotification(`Откат выполнен. Успешно: ${r.reverted || 0}, Ошибок: ${r.failed || 0}`, (r.failed>0?'warning':'success'));
+        } catch (e) {
+            console.error(e);
+            showNotification('Ошибка при откате', 'error');
         }
     }
 

@@ -24,6 +24,10 @@ Session::checkLoginUser();
 
 header('Content-Type: application/json');
 
+if (session_status() === PHP_SESSION_NONE) {
+    @session_start();
+}
+
 // Получаем данные из POST
 $input = json_decode(file_get_contents('php://input'), true);
 
@@ -39,6 +43,12 @@ $results = [
     'success' => 0,
     'failed' => 0,
     'errors' => []
+];
+
+$undoLog = [
+    'when' => date('c'),
+    'user_id' => Session::getLoginUserID(),
+    'items' => [] // каждый элемент: ['type_class'=>..., 'id'=>..., 'fields'=>['field'=>'oldValue']]
 ];
 
 foreach ($items as $item) {
@@ -71,6 +81,7 @@ foreach ($items as $item) {
     
     // Подготавливаем данные для обновления
     $updateData = ['id' => $item['id']];
+    $revertFields = [];
     
     foreach ($changes as $change) {
         $field = $change['field'];
@@ -81,26 +92,41 @@ foreach ($items as $item) {
         switch ($field) {
             case 'group_name':
                 if ($idValue > 0) {
+                    if (isset($itemClass->fields['groups_id'])) {
+                        $revertFields['groups_id'] = (int)$itemClass->fields['groups_id'];
+                    }
                     $updateData['groups_id'] = $idValue;
                 }
                 break;
             case 'state_name':
                 if ($idValue > 0) {
+                    if (isset($itemClass->fields['states_id'])) {
+                        $revertFields['states_id'] = (int)$itemClass->fields['states_id'];
+                    }
                     $updateData['states_id'] = $idValue;
                 }
                 break;
             case 'location_name':
                 if ($idValue > 0) {
+                    if (isset($itemClass->fields['locations_id'])) {
+                        $revertFields['locations_id'] = (int)$itemClass->fields['locations_id'];
+                    }
                     $updateData['locations_id'] = $idValue;
                 }
                 break;
             case 'user_name':
                 if ($idValue > 0) {
+                    if (isset($itemClass->fields['users_id'])) {
+                        $revertFields['users_id'] = (int)$itemClass->fields['users_id'];
+                    }
                     $updateData['users_id'] = $idValue;
                 }
                 break;
             case 'contact':
                 if ($value !== null) {
+                    if (isset($itemClass->fields['contact'])) {
+                        $revertFields['contact'] = (string)$itemClass->fields['contact'];
+                    }
                     $updateData['contact'] = $value;
                 }
                 break;
@@ -109,6 +135,7 @@ foreach ($items as $item) {
                     $current = isset($itemClass->fields['comment']) ? (string)$itemClass->fields['comment'] : '';
                     $append = (string)$value;
                     if ($append !== '') {
+                        $revertFields['comment'] = $current;
                         $updateData['comment'] = $current === '' ? $append : ($current . "\n" . $append);
                     }
                 }
@@ -120,6 +147,13 @@ foreach ($items as $item) {
     if (count($updateData) > 1) { // Больше чем просто ID
         if ($itemClass->update($updateData)) {
             $results['success']++;
+            if (!empty($revertFields)) {
+                $undoLog['items'][] = [
+                    'type_class' => $item['type_class'],
+                    'id' => (int)$item['id'],
+                    'fields' => $revertFields
+                ];
+            }
         } else {
             $results['failed']++;
             $results['errors'][] = "Не удалось обновить объект ID: {$item['id']}";
@@ -131,4 +165,9 @@ echo json_encode([
     'success' => true,
     'results' => $results
 ]);
+
+// Сохраняем лог для возможного отката (только если были успешные обновления)
+if ($results['success'] > 0 && !empty($undoLog['items'])) {
+    $_SESSION['inventory_last_mass_update'] = $undoLog;
+}
 ?>
