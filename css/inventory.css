@@ -293,6 +293,7 @@
 /* Центрирование текста для неактуальных строк */
 .non-actual-cell { text-align: center; padding: 12px; }
 .non-actual-label { font-weight: 600; margin-bottom: 6px; }
+.non-actual-label { text-transform: uppercase; letter-spacing: .4px; }
 .non-actual-actions { display: flex; justify-content: center; gap: 8px; }
 
 .inventory-not-found-row:hover {

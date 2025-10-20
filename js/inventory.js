@@ -554,14 +554,15 @@ loadColumnsConfig();
             
             let rowHtml = '';
             if (item.isNotFound || item.isDuplicate) {
-                const label = item.isNotFound ? 'Не найдено' : 'Дубликат';
-                const extra = item.isDuplicate ? ` (Инв. номер: ${escapeHtml(item.otherserial || '-')})` : '';
-                rowHtml = `<td colspan="${visibleColumns.length}" class="non-actual-cell">
-                    <div class="non-actual-label">${label}${extra}</div>
-                    <div class="non-actual-actions">
-                        <button class="inventory-delete-btn" onclick="removeFromBuffer(${item.index})"><i class="fas fa-trash"></i> Удалить</button>
-                    </div>
-                </td>`;
+                // Рисуем по колонкам: Поиск, Тип (НЕ НАЙДЕНО/Дубликат), Инв. номер (для дубликатов), Действия
+                visibleColumns.forEach(col => {
+                    let cellValue = '';
+                    if (col.key === 'search_term') cellValue = escapeHtml(item.search_term);
+                    else if (col.key === 'type') cellValue = `<span class="non-actual-label">${item.isNotFound ? 'НЕ НАЙДЕНО' : 'Дубликат'}</span>`;
+                    else if (col.key === 'otherserial' && item.isDuplicate) cellValue = escapeHtml(item.otherserial || '-');
+                    else if (col.key === 'actions') cellValue = `<button class=\"inventory-delete-btn\" onclick=\"removeFromBuffer(${item.index})\"><i class=\"fas fa-trash\"></i> Удалить</button>`;
+                    rowHtml += `<td>${cellValue}</td>`;
+                });
             } else {
                 visibleColumns.forEach(col => {
                     const cellValue = getCellValue(item, col.key);
