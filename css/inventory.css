@@ -112,7 +112,7 @@
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
-.inventory-results-table th { background: var(--color-primary); color: #fff; padding: 12px; text-align: left; font-weight: 600; }
+.inventory-results-table th { background: linear-gradient(180deg, var(--color-primary), #1f4fb7); color: #fff; padding: 12px; text-align: left; font-weight: 600; }
 
 .inventory-results-table td { padding: 12px; border-bottom: 1px solid var(--color-border); vertical-align: middle; }
 
@@ -257,6 +257,8 @@
 
 /* Базовые стили кнопок */
 .inventory-action-btn { border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 14px; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 6px; font-weight: 500; box-shadow: var(--shadow-sm); }
+.inventory-action-btn i { font-size: 14px; }
+.inventory-action-btn .btn-text { display: inline; }
 
 .inventory-action-btn:hover {
     transform: translateY(-1px);
@@ -737,8 +739,8 @@
     
     .inventory-search-btn {
         margin-left: 0;
-        width: 100%;
     }
+    .search-button .btn-text { display: none; }
     
     .inventory-results-table {
         font-size: 14px;
@@ -1235,12 +1237,14 @@
 
 .actions-cell .inventory-open-link,
 .actions-cell .inventory-delete-btn {
-    padding: 5px 8px !important;
-    font-size: 14px !important;
-    min-width: 35px;
+    padding: 6px 10px !important;
+    font-size: 13px !important;
+    min-width: 36px;
+    height: 30px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    border-radius: 6px;
 }
 
 /* Контейнер для скролла */

@@ -49,27 +49,27 @@ if ($debug_mode) {
         </h2>
         
         <form id="inventory-search-form">
-            <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+            <div style="display: flex; gap: 10px; margin-bottom: 20px; align-items:center;">
                 <input 
                     type="text" 
                     id="inventory-search-input" 
                     name="search_serial" 
                     placeholder="Введите инвентарный или серийный номер" 
-                    style="flex: 1; padding: 10px; font-size: 16px; border: 1px solid #ddd; border-radius: 4px;"
+                    style="flex: 1; padding: 10px; font-size: 16px; border: 1px solid #ddd; border-radius: 6px;"
                     autocomplete="off"
                 />
                 <button 
                     type="submit" 
-                    id="inventory-search-btn"
-                    style="padding: 10px 30px; font-size: 16px; background: #0d6efd; color: white; border: none; border-radius: 4px; cursor: pointer;"
+                    id="inventory-search-btn" class="inventory-action-btn inventory-btn-primary search-button"
+                    style="padding: 10px 16px; font-size: 16px;"
                 >
-                    <i class="fas fa-search" style="margin-right: 5px;"></i>
-                    Поиск
+                    <i class="fas fa-search"></i>
+                    <span class="btn-text">Поиск</span>
                 </button>
                 <button 
                     type="button"
-                    id="inventory-scan-btn"
-                    style="padding: 10px 14px; font-size: 16px; background: #17a2b8; color: white; border: none; border-radius: 4px; cursor: pointer; display: none;"
+                    id="inventory-scan-btn" class="inventory-action-btn inventory-btn-info"
+                    style="padding: 10px 12px; font-size: 16px; display: none;"
                     title="Сканировать штрихкод"
                 >
                     <i class="fas fa-camera"></i>
