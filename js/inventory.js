@@ -158,7 +158,7 @@ window.getCellValue = function(item, columnKey) {
         case 'comment':
             return `
                 <div class="comment-cell" data-idx="${item.index}">
-                    <span class="comment-text" style="white-space:pre-wrap;" ondblclick="startEditComment(${item.index})" title="Двойной клик для редактирования">${escapeHtml(item.comment || '-')}</span>
+                    <span class="comment-text" ondblclick="startEditComment(${item.index})" title="Двойной клик для редактирования">${escapeHtml(truncateText(item.comment || '-', 30))}</span>
                     <button class="inventory-action-btn inventory-btn-secondary" onclick="startEditComment(${item.index})" title="Редактировать">
                         <i class="fas fa-edit"></i>
                     </button>
@@ -566,7 +566,7 @@ loadColumnsConfig();
         const item = itemsBuffer[idx];
         const current = item ? (item.comment || '') : '';
         row.innerHTML = `
-            <input type="text" class="inline-comment-input" value="${escapeHtml(current)}" style="width:70%"> 
+            <textarea class="inline-comment-input" style="width:70%;min-height:70px;">${escapeHtml(current)}</textarea>
             <button class="inventory-action-btn inventory-btn-primary" onclick="saveEditComment(${idx})"><i class="fas fa-check"></i></button>
             <button class="inventory-action-btn inventory-btn-secondary" onclick="cancelEditComment(${idx})"><i class="fas fa-times"></i></button>
         `;

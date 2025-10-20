@@ -120,6 +120,28 @@ if ($rows && $rows->length > 0) {
         }
     }
 
+    // Сформируем шапку самостоятельно в зависимости от шаблона
+    $thead = $xpath->query('(//table)[1]/thead')->item(0);
+    if (!$thead && $tableNode) { $thead = $dom->createElement('thead'); $tableNode->insertBefore($thead, $tableNode->firstChild); }
+    // Очищаем текущий thead
+    if ($thead) { while ($thead->firstChild) { $thead->removeChild($thead->firstChild); } }
+    $trh = $dom->createElement('tr');
+    $lowname = mb_strtolower(basename($tplPath));
+    // Базовые колонки для выдачи
+    $columns = ['№','Наименование','Инв. Номер','S.N'];
+    if (mb_strpos($lowname,'return') === 0) {
+        $columns = ['№','Наименование','Инв. Номер','S.N'];
+    } elseif (mb_strpos($lowname,'sale') === 0) {
+        $columns = ['№','Наименование','Инв. Номер','S.N','Сумма','Комментарий'];
+    }
+    foreach ($columns as $col) { $th = $dom->createElement('th', $col); $trh->appendChild($th); }
+    if ($thead) { $thead->appendChild($trh); }
+
+    // Пересоберем карту индексов под новую шапку
+    $idxMap = ['num'=>0,'name'=>1,'inv'=>2,'sn'=>3,'sum'=>null,'comment'=>null];
+    if (in_array('Сумма',$columns,true)) { $idxMap['sum'] = array_search('Сумма',$columns,true); }
+    if (in_array('Комментарий',$columns,true)) { $idxMap['comment'] = array_search('Комментарий',$columns,true); }
+
     // Генерируем столько строк, сколько элементов
     $tableNode = $xpath->query('(//table)[1]')->item(0);
     $tbody = $xpath->query('(//table)[1]/tbody')->item(0);
