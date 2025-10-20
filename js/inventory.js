@@ -77,8 +77,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const video = document.getElementById('scanner-video');
         if (!video) return;
         try {
+            // Разрешаем тест в HTTP: предупреждаем, но продолжаем
             if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
-                showNotification('Для работы камеры требуется HTTPS или localhost', 'warning');
+                showNotification('Внимание: доступ к камере в HTTP может блокироваться браузером. Попробуем открыть…', 'warning');
             }
             let stream = null;
             const constraintsPrimary = { video: { facingMode: { ideal: 'environment' } }, audio: false };
@@ -86,7 +87,21 @@ document.addEventListener('DOMContentLoaded', function() {
             try {
                 stream = await navigator.mediaDevices.getUserMedia(constraintsPrimary);
             } catch(e1) {
-                stream = await navigator.mediaDevices.getUserMedia(constraintsFallback);
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia(constraintsFallback);
+                } catch(e2) {
+                    // iOS Safari fallback через legacy webkitGetUserMedia, если есть
+                    const gum = (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) || navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
+                    if (gum) {
+                        stream = await new Promise((resolve, reject) => {
+                            try {
+                                (gum.call(navigator.mediaDevices || navigator, constraintsFallback, resolve, reject));
+                            } catch(err) { reject(err); }
+                        });
+                    } else {
+                        throw e2;
+                    }
+                }
             }
             window.__scannerStream = stream;
             video.srcObject = stream;
@@ -654,7 +669,8 @@ loadColumnsConfig();
         }
     }
 
-    window.toggleActionsMenu = function(){
+    window.toggleActionsMenu = function(ev){
+        if (ev && ev.stopPropagation) ev.stopPropagation();
         // Простое контекстное меню c действиями
         const existing = document.getElementById('actions-menu-dropdown');
         if (existing) { existing.remove(); return; }
@@ -680,7 +696,7 @@ loadColumnsConfig();
                 <button class="inventory-action-btn inventory-btn-danger" onclick="clearBuffer(); closeActionsMenu()"><i class="fas fa-trash"></i> Очистить буфер</button>
             </div>`;
         document.body.appendChild(menu);
-        document.addEventListener('click', closeActionsMenu, { once: true });
+        setTimeout(() => document.addEventListener('click', closeActionsMenu, { once: true }), 0);
     }
 
     window.closeActionsMenu = function(){
